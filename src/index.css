@@ -428,6 +428,37 @@ select.input {
   padding-left: 40px;
 }
 
+.input-icon .password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.input-icon .password-toggle svg {
+  position: static;
+  transform: none;
+}
+
+.input-icon .password-toggle:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.input-icon .input[type='password'],
+.input-icon .input[type='text'] {
+  padding-right: 44px;
+}
+
 .check {
   display: flex;
   align-items: center;

@@ -7,10 +7,18 @@ import Login from './pages/Login'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
+function PageLoader() {
+  return (
+    <div className="page-loader">
+      <div className="spinner" />
+    </div>
+  )
+}
+
 function RequireAuth({ children }) {
   const { session, ready } = useAuth()
   const location = useLocation()
-  if (!ready) return <div className="page-loader"><div className="spinner" /></div>
+  if (!ready) return <PageLoader />
   if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return children
 }
@@ -33,12 +41,18 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route element={<Layout />}>
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<OrgChart />} />
-        <Route path="members" element={<RequireAuth><Members /></RequireAuth>} />
-        <Route path="assign" element={<RequireAuth><Assignments /></RequireAuth>} />
+        <Route path="members" element={<Members />} />
+        <Route path="assign" element={<Assignments />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
