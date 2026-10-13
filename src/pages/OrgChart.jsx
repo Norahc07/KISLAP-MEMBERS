@@ -69,14 +69,30 @@ export default function OrgChart() {
           {executive.map((unit) => {
             const list = (positionsByUnit.get(unit.id) ?? []).filter(matches)
             if (!list.length) return null
+            const advisers = list.filter((p) => p.level === 'adviser')
+            const officers = list.filter((p) => p.level !== 'adviser')
             return (
               <section key={unit.id} className="section fade-in">
                 <h2 className="section-title">{unit.name}</h2>
-                <div className="officer-grid">
-                  {list.map((p, i) => (
-                    <OfficerCard key={p.id} position={p} member={membersById.get(p.member_id)} featured={i === 0 && !q} />
-                  ))}
-                </div>
+                {advisers.length > 0 && (
+                  <div className={`adviser-row ${officers.length ? 'has-connector' : ''}`}>
+                    {advisers.map((p) => (
+                      <OfficerCard key={p.id} position={p} member={membersById.get(p.member_id)} variant="adviser" />
+                    ))}
+                  </div>
+                )}
+                {officers.length > 0 && (
+                  <div className="officer-grid">
+                    {officers.map((p, i) => (
+                      <OfficerCard
+                        key={p.id}
+                        position={p}
+                        member={membersById.get(p.member_id)}
+                        variant={i === 0 && !q ? 'featured' : ''}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )
           })}
@@ -123,10 +139,10 @@ function Stat({ icon: Icon, label, value, tone }) {
   )
 }
 
-function OfficerCard({ position, member, featured }) {
+function OfficerCard({ position, member, variant = '' }) {
   return (
-    <article className={`officer-card ${featured ? 'featured' : ''} ${member ? '' : 'is-vacant'}`}>
-      <Avatar src={member?.photo_url} name={member?.full_name} size={featured ? 104 : 84} className="ring" />
+    <article className={`officer-card ${variant} ${member ? '' : 'is-vacant'}`}>
+      <Avatar src={member?.photo_url} name={member?.full_name} size={variant ? 104 : 84} className="ring" />
       <h3>{member?.full_name ?? 'Vacant'}</h3>
       <p>{position.title}</p>
     </article>

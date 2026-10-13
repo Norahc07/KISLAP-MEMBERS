@@ -578,6 +578,11 @@ select.input {
   border: 1px solid var(--border);
 }
 
+.level-adviser {
+  background: #fde68a;
+  color: #92400e;
+}
+
 .level-officer {
   background: #fef3c7;
   color: #b45309;
@@ -788,8 +793,48 @@ select.input {
   border-color: #a7f3d0;
 }
 
-.officer-card.featured h3 {
+.officer-card.featured h3,
+.officer-card.adviser h3 {
   font-size: 1.15rem;
+}
+
+.adviser-row {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.adviser-row.has-connector {
+  padding-bottom: 28px;
+  margin-bottom: -12px;
+}
+
+.adviser-row.has-connector::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  height: 28px;
+  transform: translateX(-50%);
+  background: linear-gradient(#f59e0b, #a7f3d0);
+}
+
+.officer-card.adviser {
+  width: 100%;
+  max-width: 340px;
+  background: linear-gradient(180deg, #fffbeb, var(--surface) 60%);
+  border-color: #fcd34d;
+}
+
+.officer-card.adviser .avatar.ring {
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px rgba(245, 158, 11, 0.55);
+}
+
+.officer-card.adviser p {
+  color: #b45309;
 }
 
 .is-vacant h3,

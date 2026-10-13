@@ -26,7 +26,7 @@ create table if not exists public.positions (
   id          uuid primary key default gen_random_uuid(),
   unit_id     uuid not null references public.units(id) on delete cascade,
   title       text not null,
-  level       text not null default 'member' check (level in ('officer', 'director', 'assistant', 'member')),
+  level       text not null default 'member' check (level in ('adviser', 'officer', 'director', 'assistant', 'member')),
   sort_order  int  not null default 0,
   member_id   uuid references public.members(id) on delete set null,
   created_at  timestamptz not null default now()

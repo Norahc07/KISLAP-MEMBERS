@@ -48,6 +48,7 @@ begin
   values ('Executive Board of Officers', 'executive', 0)
   on conflict (name) do nothing;
 
+  perform pg_temp.seed_pos('Executive Board of Officers', 'Adviser',                   'adviser', 0);
   perform pg_temp.seed_pos('Executive Board of Officers', 'President / Chairperson',   'officer', 1, 'MARLO ESTOCADO');
   perform pg_temp.seed_pos('Executive Board of Officers', 'Internal Vice President',   'officer', 2, 'ELLA DE LA CRUZ');
   perform pg_temp.seed_pos('Executive Board of Officers', 'External Vice President',   'officer', 3, 'MARK JERALD URGELLES');
