@@ -6,6 +6,7 @@ import Assignments from './pages/Assignments'
 import Tracker from './pages/Tracker'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Registrations from './pages/Registrations'
 import Account from './pages/Account'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
@@ -99,6 +100,14 @@ export default function App() {
         <Route index element={<OrgChart />} />
         <Route path="account" element={<MemberAccount />} />
         <Route path="register" element={<Register />} />
+        <Route
+          path="registrations"
+          element={
+            <RequireAdmin>
+              <Registrations />
+            </RequireAdmin>
+          }
+        />
         <Route
           path="members"
           element={

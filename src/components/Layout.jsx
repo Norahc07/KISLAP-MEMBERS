@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, ClipboardCheck, FileText, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 
@@ -14,6 +14,7 @@ export default function Layout() {
     { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
     ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
     { to: '/register', label: 'Registration', icon: FileText },
+    ...(isAdmin ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
     ...(isAdmin
       ? [
           { to: '/members', label: 'Members', icon: Users },

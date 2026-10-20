@@ -44,15 +44,15 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
       ['Suffix', form.suffix],
       ['Sex', labelOf([['male', 'Male'], ['female', 'Female']], form.sex)],
       ['Age', form.age],
-      ['Date of birth', formatDisplayDate(form.dateOfBirth)],
+      ['Date of birth', formatDisplayDate(form.dateOfBirth), 'date'],
       ['Civil status', labelOf([['single', 'Single'], ['married', 'Married'], ['other', 'Other']], form.civilStatus)],
-      ['Permanent address', form.address],
+      ['Permanent address', form.address, 'wide'],
       ['Barangay', form.barangay],
       ['City / municipality', form.city],
       ['Province', form.province],
       ['Contact number', form.contactNumber],
-      ['Email address', form.email],
-      ['Facebook name', form.facebookName],
+      ['Email address', form.email, 'wide'],
+      ['Facebook name', form.facebookName, 'wide'],
     ]],
     ['B. Parents', [
       ["Father's name", form.fatherName],
@@ -62,7 +62,7 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
       ['Person with disability', labelOf(DISCLOSURE, form.pwd)],
       ['Registered voter', labelOf(DISCLOSURE, form.registeredVoter)],
       ['Religion', form.religion === 'Other' ? form.religionOther : form.religion],
-      ['Skills, talents, and expertise', form.skills],
+      ['Skills, talents, and expertise', form.skills, 'wide'],
     ]],
     ['D. Educational background', educationRows],
     ['E. Emergency guardian', [
@@ -73,39 +73,23 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
       ['Alternative number', form.altContactNumber],
     ]],
     ['F. Volunteer interests', [
-      ['Areas', form.interests.join(', ')],
+      ['Areas', form.interests.join(', '), 'wide'],
       ['Preferred committee', form.preferredCommittee],
-      ['Other interests', form.otherInterests],
       ['Availability', form.availability.map((value) => labelOf(AVAILABILITY, value)).filter(Boolean).join(', ')],
+      ['Other interests', form.otherInterests, 'wide'],
     ]],
-    ['G. Requirements, declaration, and privacy', [
+    ['G. Requirements and consent', [
       ['Formal picture', labelOf([['submitted', 'Submitted'], ['pending', 'Pending']], form.photoStatus)],
       ['Applicant declaration', form.certified ? 'Agreed' : ''],
-      ['Applicant printed name', form.applicantPrintedName],
-      ['Applicant signature', form.applicantSignature],
-      ['Date signed', formatDisplayDate(form.dateSigned)],
-      ['Guardian signature', form.guardianSignature],
-      ['Guardian date', formatDisplayDate(form.guardianSignedDate)],
       ['Privacy consent', form.privacyConsent ? 'Yes' : ''],
       ['Announcements', form.announcementsConsent ? 'Yes' : ''],
       ['Public photo consent', form.photoPublicConsent ? 'Yes' : 'No'],
-      ['Privacy signature', form.privacySignature],
-      ['Privacy date', formatDisplayDate(form.privacyDate)],
     ]],
   ]
-
-  if (form.dateReceived || form.interviewDate || form.applicationStatus || form.reviewedBy) {
-    groups.push(['Organization use', [
-      ['Date received', formatDisplayDate(form.dateReceived)],
-      ['Interview date', formatDisplayDate(form.interviewDate)],
-      ['Application status', labelOf([['pending', 'Pending'], ['approved', 'Approved'], ['declined', 'Declined']], form.applicationStatus)],
-      ['Interview assessment', labelOf([['recommended', 'Recommended'], ['review', 'For further review'], ['not_recommended', 'Not recommended']], form.interviewAssessment)],
-      ['Assigned position / committee', form.assignedPosition],
-      ['Reviewed by', form.reviewedBy],
-      ['Approval date', formatDisplayDate(form.approvalDate)],
-      ['Remarks', form.remarks],
-    ]])
-  }
+  const signatures = [
+    ['Applicant', form.applicantPrintedName, form.applicantSignature, formatDisplayDate(form.dateSigned)],
+    ['Guardian', form.guardianName, form.guardianSignature, formatDisplayDate(form.guardianSignedDate)],
+  ]
 
   return (
     <article className={preview ? 'registration-sheet' : 'registration-print'}>
@@ -131,13 +115,25 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
         <section key={title} className="print-section">
           <h2>{title}</h2>
           <dl className="print-fields">
-            {rows.map(([label, value]) => (
-              <div key={label}>
+            {rows.map(([label, value, kind]) => (
+              <div key={label} className={kind === 'wide' ? 'wide' : ''}>
                 <dt>{label}</dt>
-                <dd>{renderFieldValue(value)}</dd>
+                <dd className={kind === 'date' ? 'is-date' : ''}>{renderFieldValue(value)}</dd>
               </div>
             ))}
           </dl>
+          {title.startsWith('G.') && (
+            <div className="sign-board">
+              {signatures.map(([role, printed, signature, signedOn]) => (
+                <figure key={role} className="sign-block">
+                  <figcaption>{role}</figcaption>
+                  <p className="sign-name">{printed || '—'}</p>
+                  <div className="sign-line">{renderFieldValue(signature)}</div>
+                  <p className="sign-date"><span>Date</span><strong>{signedOn || '—'}</strong></p>
+                </figure>
+              ))}
+            </div>
+          )}
         </section>
       ))}
     </article>

@@ -587,6 +587,59 @@ select.input {
   border: 1px solid var(--border);
 }
 
+.badge-submitted {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-approved {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.badge-declined {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.reg-review {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reg-confirm,
+.reg-org {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.reg-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.reg-confirm p,
+.reg-org > p {
+  margin: 4px 0 0;
+}
+
+.reg-org h2 {
+  margin: 0;
+}
+
+.reg-org .field,
+.reg-org .choice-set,
+.reg-org .field-row {
+  margin-top: 14px;
+}
+
 .level-adviser {
   background: #fde68a;
   color: #92400e;
@@ -2238,6 +2291,50 @@ select.input {
   color: #334155;
 }
 
+.register-official {
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-official-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.register-official-bar h1 {
+  margin: 2px 0;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.register-official-bar p:last-child {
+  margin: 0;
+  max-width: 62ch;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.register-official .registration-sheet {
+  width: 100%;
+  padding: 16mm 14mm 10mm;
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 800px) {
+  .register-official .registration-sheet {
+    padding: 18px 14px 8px;
+  }
+}
+
 @media (max-width: 860px) {
   .register-layout {
     grid-template-columns: 1fr;
@@ -2354,37 +2451,152 @@ select.input {
 }
 
 .registration-sheet .print-section {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
-.registration-sheet .print-section h2 {
-  margin: 0 0 8px;
-  font-size: 0.92rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
-}
-
-.registration-sheet .print-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px 16px;
+.registration-sheet .print-section h2,
+.print-section h2 {
   margin: 0;
+  padding: 6px 10px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.registration-sheet .print-fields dt {
-  font-size: 0.68rem;
-  font-weight: 700;
+.registration-sheet .print-fields,
+.print-fields {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.78fr) minmax(0, 1.22fr) minmax(96px, 0.78fr) minmax(0, 1.22fr);
+  margin: 0;
+  border: 1px solid #1e293b;
+  border-top: 0;
+}
+
+.registration-sheet .print-fields > div,
+.print-fields > div {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: span 2;
+  align-items: stretch;
+  min-width: 0;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+
+.registration-sheet .print-fields > div.wide,
+.print-fields > div.wide {
+  grid-column: 1 / -1;
+}
+
+.registration-sheet .print-fields > div.wide dd,
+.print-fields > div.wide dd {
+  grid-column: 2 / -1;
+}
+
+.registration-sheet .print-fields dt,
+.print-fields dt {
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 0.66rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: #64748b;
 }
 
-.registration-sheet .print-fields dd {
-  margin: 2px 0 0;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border);
+.registration-sheet .print-fields dd,
+.print-fields dd {
+  margin: 0;
+  padding: 7px 10px;
+  border: 0;
   font-weight: 650;
   overflow-wrap: anywhere;
+}
+
+.registration-sheet .print-fields dd.is-date,
+.print-fields dd.is-date {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.sign-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sign-block {
+  margin: 0;
+  padding: 10px 12px 8px;
+  border: 1px solid #1e293b;
+  background: #fff;
+}
+
+.sign-block figcaption {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.sign-name {
+  min-height: 1.3em;
+  margin: 4px 0 8px;
+  font-weight: 800;
+}
+
+.sign-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 72px;
+  border-bottom: 1.5px solid #0f172a;
+}
+
+.sign-line .sign-preview {
+  max-height: 64px;
+  margin-bottom: 2px;
+}
+
+.sign-date {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.sign-date strong {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+  .registration-sheet .print-fields,
+  .print-fields,
+  .sign-board {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-sheet .print-fields > div,
+  .print-fields > div,
+  .registration-sheet .print-fields > div.wide,
+  .print-fields > div.wide {
+    grid-template-columns: minmax(108px, 42%) minmax(0, 1fr);
+    grid-column: auto;
+  }
+
+  .registration-sheet .print-fields > div.wide dd,
+  .print-fields > div.wide dd {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2425,12 +2637,25 @@ select.input {
     display: none !important;
   }
 
+  .app-shell,
+  .main,
+  .register-shell {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
   .registration-print {
     display: block !important;
     width: 100%;
     max-width: none;
     box-sizing: border-box;
-    padding: 12mm;
+    padding: 12mm 14mm;
     color: #111;
     background: #fff;
     font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
@@ -2511,44 +2736,95 @@ select.input {
     line-height: 1.25;
   }
 
-  .print-section {
+  .print-header {
     break-inside: avoid;
-    margin-top: 4mm;
+    break-after: avoid;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+
+  .print-section {
+    break-inside: auto;
+    page-break-inside: auto;
+    margin-top: 3.5mm;
   }
 
   .print-section h2 {
-    margin: 0 0 2mm;
-    font-size: 11pt;
-    border-bottom: 0.6pt solid #999;
-    padding-bottom: 1mm;
+    font-size: 8.5pt;
+    break-after: avoid;
+    page-break-after: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  .print-fields {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(45mm, 1fr));
-    gap: 2mm 5mm;
-    margin: 0;
+  .registration-print .print-fields,
+  .registration-print .sign-board {
+    display: grid !important;
   }
 
-  .print-fields div {
+  .registration-print .print-fields {
+    grid-template-columns: minmax(32mm, 0.85fr) minmax(0, 1.15fr) minmax(32mm, 0.85fr) minmax(0, 1.15fr) !important;
+  }
+
+  .registration-print .sign-board {
+    grid-template-columns: 1fr 1fr !important;
     break-inside: avoid;
-    min-width: 0;
+    page-break-inside: avoid;
+  }
+
+  .registration-print .print-fields > div,
+  .registration-print .print-fields > div.wide {
+    display: grid !important;
+    grid-template-columns: subgrid !important;
+    grid-column: span 2 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0;
+  }
+
+  .registration-print .print-fields > div.wide {
+    grid-column: 1 / -1 !important;
+  }
+
+  .registration-print .print-fields > div.wide dd {
+    grid-column: 2 / -1 !important;
+  }
+
+  .print-fields > div {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0;
+  }
+
+  .print-fields dt,
+  .print-fields dd {
+    padding: 1.4mm 2.2mm;
   }
 
   .print-fields dt {
-    font-size: 7.5pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-size: 7pt;
     color: #444;
   }
 
-  .print-fields dd {
-    margin: 0.4mm 0 0;
-    padding-bottom: 1mm;
-    border-bottom: 0.4pt solid #ddd;
-    font-weight: 650;
-    overflow-wrap: anywhere;
+  .sign-board {
+    gap: 3mm;
+    margin-top: 3mm;
+  }
+
+  .sign-block {
+    break-inside: avoid;
+    padding: 2mm 2.5mm;
+  }
+
+  .sign-line {
+    min-height: 16mm;
+  }
+
+  .sign-line .sign-preview,
+  .sign-preview {
+    height: 14mm;
+    max-height: 14mm;
+    max-width: 48mm;
   }
 
   .sign-preview {
@@ -2564,6 +2840,26 @@ select.input {
   flex-direction: column;
   gap: 14px;
   container-type: inline-size;
+}
+
+.account-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.account-notice strong {
+  font-size: 0.95rem;
+}
+
+.account-notice span {
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .account-card {

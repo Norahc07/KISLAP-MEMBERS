@@ -14,22 +14,26 @@ export default function Account() {
   const toast = useToast()
   const [uploading, setUploading] = useState(false)
   const [memberPhoto, setMemberPhoto] = useState('')
+  const [readyForInterview, setReadyForInterview] = useState(false)
   const code = profile?.member_no ? memberCode(profile.member_no) : ''
   const photo = profile?.photo_url || memberPhoto
 
   useEffect(() => {
-    if (!profile?.member_no || profile.photo_url) {
+    if (!profile?.member_no) {
       setMemberPhoto('')
+      setReadyForInterview(false)
       return undefined
     }
     let ignore = false
     supabase
       .from('membership_tracker')
-      .select('members(photo_url)')
+      .select('registration_form, interview, members(photo_url)')
       .eq('member_no', profile.member_no)
       .maybeSingle()
       .then(({ data }) => {
-        if (!ignore) setMemberPhoto(data?.members?.photo_url || '')
+        if (ignore) return
+        if (!profile.photo_url) setMemberPhoto(data?.members?.photo_url || '')
+        setReadyForInterview(Boolean(data?.registration_form) && !data?.interview)
       })
     return () => {
       ignore = true
@@ -54,6 +58,12 @@ export default function Account() {
 
   return (
     <div className="page account-page">
+      {readyForInterview && (
+        <div className="account-notice" role="status">
+          <strong>You are ready for interview.</strong>
+          <span>Your registration is submitted. An officer will schedule the interview.</span>
+        </div>
+      )}
       <section className="account-card">
         <label className="account-photo">
           <Avatar src={photo} name={profile?.full_name || profile?.username} size={108} className="ring" />

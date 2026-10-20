@@ -327,8 +327,6 @@ export function validateStep(stepId, form, lookup) {
     }
     need(form.privacyConsent, 'Data privacy consent')
     need(form.announcementsConsent, 'Consent to receive announcements')
-    need(hasSignature(form.privacySignature), 'Privacy consent e-signature')
-    need(isValidDate(form.privacyDate), 'Privacy consent date')
   }
 
   return missing
@@ -386,14 +384,14 @@ export function toPayload(form) {
     privacy_consent: form.privacyConsent,
     announcements_consent: form.announcementsConsent,
     photo_public_consent: form.photoPublicConsent,
-    privacy_signature: form.privacySignature.trim(),
-    privacy_date: form.privacyDate,
+    privacy_signature: form.applicantSignature.trim(),
+    privacy_date: form.dateSigned,
     date_received: form.dateReceived || null,
     interview_date: form.interviewDate || null,
     application_status: form.applicationStatus || null,
     interview_assessment: form.interviewAssessment || null,
     assigned_position: form.assignedPosition.trim(),
-    remarks: form.remarks.trim(),
+    remarks: '',
     reviewed_by: form.reviewedBy.trim(),
     approval_date: form.approvalDate || null,
   }
