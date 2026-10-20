@@ -2364,6 +2364,22 @@ select.input {
   display: none;
 }
 
+.print-frame {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.print-frame td {
+  padding: 0;
+  border: 0;
+  vertical-align: top;
+}
+
+.print-frame thead,
+.print-frame tfoot {
+  display: none;
+}
+
 .registration-sheet {
   padding: 22px 18px 8px;
   border: 1px solid var(--border);
@@ -2655,12 +2671,25 @@ select.input {
     width: 100%;
     max-width: none;
     box-sizing: border-box;
-    padding: 12mm 14mm;
+    padding: 0 14mm;
     color: #111;
     background: #fff;
     font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
     font-size: 10.5pt;
     line-height: 1.35;
+  }
+
+  .print-frame thead,
+  .print-frame tfoot {
+    display: table-header-group;
+  }
+
+  .print-frame tfoot {
+    display: table-footer-group;
+  }
+
+  .print-page-gap {
+    height: 12mm;
   }
 
   .print-header {

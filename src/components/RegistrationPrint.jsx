@@ -93,6 +93,16 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
 
   return (
     <article className={preview ? 'registration-sheet' : 'registration-print'}>
+      <table className="print-frame">
+        <thead>
+          <tr><td><div className="print-page-gap" /></td></tr>
+        </thead>
+        <tfoot>
+          <tr><td><div className="print-page-gap" /></td></tr>
+        </tfoot>
+        <tbody>
+          <tr>
+            <td>
       <header className="print-header">
         <div className="print-brand">
           <Logo size={preview ? 88 : 84} />
@@ -136,6 +146,10 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
           )}
         </section>
       ))}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </article>
   )
 }
