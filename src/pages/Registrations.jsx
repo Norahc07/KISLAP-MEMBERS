@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, ClipboardList, Printer, Search } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, CheckCircle2, ClipboardList, Download, Printer, Search } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
@@ -31,7 +31,7 @@ export default function Registrations() {
   const [selected, setSelected] = useState(null)
   const [previewing, setPreviewing] = useState(null)
   const [picked, setPicked] = useState(() => new Set())
-  const [printNos, setPrintNos] = useState([])
+  const [job, setJob] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -94,22 +94,37 @@ export default function Registrations() {
   const approved = people.filter((person) => person.status.key === 'approved')
   const visibleApproved = visible.filter((person) => person.status.key === 'approved')
   const allVisiblePicked = visibleApproved.length > 0 && visibleApproved.every((person) => picked.has(person.tracker.member_no))
-  const printPeople = printNos
+  const peopleRef = useRef(people)
+  peopleRef.current = people
+  const printPeople = (job?.nos || [])
     .map((memberNo) => people.find((person) => person.tracker.member_no === memberNo))
     .filter((person) => person?.registration)
 
   useEffect(() => {
-    if (!printNos.length) return undefined
-    const timer = window.setTimeout(() => window.print(), 80)
+    if (!job) return undefined
+    let cancel = false
+    const timer = window.setTimeout(async () => {
+      if (cancel) return
+      if (job.kind === 'download') {
+        const selected = job.nos
+          .map((memberNo) => peopleRef.current.find((person) => person.tracker.member_no === memberNo))
+          .filter((person) => person?.registration)
+        await savePrintedForms(selected)
+        if (!cancel) setJob(null)
+        return
+      }
+      window.print()
+    }, 80)
     function done() {
-      setPrintNos([])
+      setJob(null)
     }
-    window.addEventListener('afterprint', done)
+    if (job.kind === 'print') window.addEventListener('afterprint', done)
     return () => {
+      cancel = true
       window.clearTimeout(timer)
       window.removeEventListener('afterprint', done)
     }
-  }, [printNos])
+  }, [job])
 
   function togglePicked(memberNo) {
     setPicked((current) => {
@@ -129,10 +144,10 @@ export default function Registrations() {
     })
   }
 
-  function printApproved(memberNos) {
+  function startJob(memberNos, kind) {
     const ids = memberNos.filter((memberNo) => approved.some((person) => person.tracker.member_no === memberNo))
-    if (!ids.length) return
-    setPrintNos(ids)
+    if (!ids.length || job) return
+    setJob({ nos: ids, kind })
   }
 
   const previewPerson = people.find((person) => person.tracker.member_no === previewing) || null
@@ -145,7 +160,8 @@ export default function Registrations() {
           <ApprovedPreview
             person={previewPerson}
             onBack={() => setPreviewing(null)}
-            onPrint={() => printApproved([previewPerson.tracker.member_no])}
+            onPrint={() => startJob([previewPerson.tracker.member_no], 'print')}
+            onDownload={() => startJob([previewPerson.tracker.member_no], 'download')}
           />
         </div>
         <PrintCopies people={printPeople} />
@@ -218,22 +234,19 @@ export default function Registrations() {
         </div>
       </div>
 
-      <div className="ereg-bulk">
-        <p>
-          {approved.length
-            ? `${approved.length} approved ${approved.length === 1 ? 'form' : 'forms'}. Print them together, then choose Save as PDF to keep a copy on this device.`
-            : 'Approved forms can be previewed and printed once an officer marks them approved.'}
-        </p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={!approved.length || printNos.length > 0}
-          onClick={() => printApproved(chosen.length ? chosen : approved.map((person) => person.tracker.member_no))}
-        >
-          <Printer size={16} />
-          {chosen.length ? `Print ${chosen.length} / save to device` : 'Print all approved / save to device'}
-        </button>
-      </div>
+      {chosen.length > 0 && (
+        <div className="ereg-bulk">
+          <p>{chosen.length} selected</p>
+          <div className="ereg-actions">
+            <button type="button" className="btn btn-soft" disabled={!!job} onClick={() => startJob(chosen, 'print')}>
+              <Printer size={16} /> Print ({chosen.length})
+            </button>
+            <button type="button" className="btn btn-primary" disabled={!!job} onClick={() => startJob(chosen, 'download')}>
+              <Download size={16} /> Download ({chosen.length})
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="skeleton-card">
@@ -289,8 +302,11 @@ export default function Registrations() {
                           <button type="button" className="btn btn-soft btn-sm" onClick={() => setPreviewing(person.tracker.member_no)}>
                             Preview
                           </button>
-                          <button type="button" className="btn btn-soft btn-sm" onClick={() => printApproved([person.tracker.member_no])}>
+                          <button type="button" className="btn btn-soft btn-sm" onClick={() => startJob([person.tracker.member_no], 'print')}>
                             <Printer size={14} /> Print
+                          </button>
+                          <button type="button" className="btn btn-soft btn-sm" onClick={() => startJob([person.tracker.member_no], 'download')}>
+                            <Download size={14} /> Download
                           </button>
                         </>
                       )}
@@ -321,7 +337,7 @@ export default function Registrations() {
   )
 }
 
-function ApprovedPreview({ person, onBack, onPrint }) {
+function ApprovedPreview({ person, onBack, onPrint, onDownload }) {
   const form = fromRow(person.registration)
   return (
     <div className="page page-wide">
@@ -332,16 +348,81 @@ function ApprovedPreview({ person, onBack, onPrint }) {
               <ArrowLeft size={16} /> All eRegForms
             </button>
             <h1>{person.name}</h1>
-            <p>{memberCode(person.tracker.member_no)} · {person.position}. This approved form can be printed or saved as a PDF on this device.</p>
+            <p>{memberCode(person.tracker.member_no)} · {person.position}</p>
           </div>
-          <button type="button" className="btn btn-primary" onClick={onPrint}>
-            <Printer size={16} /> Print / save to device
-          </button>
+          <div className="ereg-actions">
+            <button type="button" className="btn btn-soft" onClick={onPrint}>
+              <Printer size={16} /> Print
+            </button>
+            <button type="button" className="btn btn-primary" onClick={onDownload}>
+              <Download size={16} /> Download
+            </button>
+          </div>
         </header>
         <RegistrationPrint form={form} preview />
       </section>
     </div>
   )
+}
+
+async function savePrintedForms(people) {
+  const root = document.querySelector('.ereg-print-target')
+  if (!root || !people.length) return
+  const clone = root.cloneNode(true)
+  await inlineImages(root, clone)
+  const css = await collectCss()
+  const filename = people.length === 1
+    ? `${memberCode(people[0].tracker.member_no)}-registration.html`
+    : `KISLAP-registrations-${people.length}.html`
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${filename}</title><style>${css}</style></head><body>${clone.innerHTML}</body></html>`
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+async function collectCss() {
+  const parts = []
+  for (const sheet of document.styleSheets) {
+    try {
+      parts.push([...sheet.cssRules].map((rule) => rule.cssText).join('\n'))
+    } catch {
+      if (sheet.href) parts.push(await (await fetch(sheet.href)).text())
+    }
+  }
+  return `${parts.join('\n').replaceAll('@media print', '@media all')}
+.registration-print{display:block !important;background:#fff;color:#111}`
+}
+
+async function inlineImages(liveRoot, cloneRoot) {
+  const live = [...liveRoot.querySelectorAll('img')]
+  const copy = [...cloneRoot.querySelectorAll('img')]
+  await Promise.all(live.map(async (img, index) => {
+    const node = copy[index]
+    if (!node) return
+    if (img.currentSrc.startsWith('data:') || img.src.startsWith('data:')) {
+      node.setAttribute('src', img.currentSrc || img.src)
+      return
+    }
+    try {
+      const response = await fetch(img.src)
+      const blob = await response.blob()
+      node.setAttribute('src', await blobToDataUrl(blob))
+    } catch {
+      node.setAttribute('src', img.src)
+    }
+  }))
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
 }
 
 function PrintCopies({ people }) {
