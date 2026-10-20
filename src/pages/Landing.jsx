@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
@@ -149,16 +150,26 @@ export default function Landing() {
       return
     }
 
-    setBusy(true)
-    setNote('')
-    setProgress(0)
-    setLabel('Confirm the install')
+    flushSync(() => {
+      setBusy(true)
+      setNote('')
+      setProgress(0)
+      setLabel('Downloading KISLAP')
+    })
+    let stopped = false
+    const choicePromise = promptEvent.prompt().then(() => promptEvent.userChoice)
+    window.deferredInstall = null
+    setInstallable(false)
+    const downloadPromise = cacheShell((ratio) => {
+      if (stopped) return
+      const percent = Math.min(92, Math.round(ratio * 92))
+      setProgress((current) => Math.max(current, percent))
+      setLabel('Downloading KISLAP')
+    })
     try {
-      await promptEvent.prompt()
-      const choice = await promptEvent.userChoice
-      window.deferredInstall = null
-      setInstallable(false)
+      const choice = await choicePromise
       if (choice.outcome !== 'accepted') {
+        stopped = true
         setBusy(false)
         setProgress(0)
         setLabel('')
@@ -166,12 +177,8 @@ export default function Landing() {
         return
       }
 
-      setLabel('Downloading KISLAP')
-      await cacheShell((ratio) => {
-        const percent = Math.round(ratio * 100)
-        setProgress(percent)
-        setLabel(percent >= 100 ? 'Finishing install' : 'Downloading KISLAP')
-      })
+      await downloadPromise
+      setProgress((current) => Math.max(current, 94))
       setLabel('Finishing install')
       await waitForInstalled(2500)
       localStorage.setItem('kislap-installed', '1')
@@ -240,9 +247,11 @@ export default function Landing() {
           )}
         </div>
 
-        <p className="landing-note">
-          {note || 'Use the web if you do not want to download the app.'}
-        </p>
+        {(note || !busy) && (
+          <p className="landing-note">
+            {note || 'Use the web if you do not want to download the app.'}
+          </p>
+        )}
       </section>
     </div>
   )
