@@ -28,7 +28,6 @@ export default function Registrations() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
-  const [selected, setSelected] = useState(null)
   const [previewing, setPreviewing] = useState(null)
   const [picked, setPicked] = useState(() => new Set())
   const [job, setJob] = useState(null)
@@ -145,7 +144,7 @@ export default function Registrations() {
   }
 
   function startJob(memberNos, kind) {
-    const ids = memberNos.filter((memberNo) => approved.some((person) => person.tracker.member_no === memberNo))
+    const ids = memberNos.filter((memberNo) => people.some((person) => person.tracker.member_no === memberNo && person.registration))
     if (!ids.length || job) return
     setJob({ nos: ids, kind })
   }
@@ -157,27 +156,13 @@ export default function Registrations() {
     return (
       <>
         <div className="screen-only">
-          <ApprovedPreview
+          <RegistrationReview
             person={previewPerson}
             onBack={() => setPreviewing(null)}
             onPrint={() => startJob([previewPerson.tracker.member_no], 'print')}
             onDownload={() => startJob([previewPerson.tracker.member_no], 'download')}
-          />
-        </div>
-        <PrintCopies people={printPeople} />
-      </>
-    )
-  }
-
-  if (selected) {
-    return (
-      <>
-        <div className="screen-only">
-          <RegistrationReview
-            person={people.find((person) => person.tracker.member_no === selected) || null}
-            onBack={() => setSelected(null)}
             onSaved={() => {
-              setSelected(null)
+              setPreviewing(null)
               load()
               toast.success('Organization review saved')
             }}
@@ -296,28 +281,13 @@ export default function Registrations() {
                   <td className="member-code">{memberCode(person.tracker.member_no)}</td>
                   <td><span className={`badge badge-${person.status.key}`}>{person.status.label}</span></td>
                   <td>
-                    <div className="ereg-actions">
-                      {person.status.key === 'approved' && (
-                        <>
-                          <button type="button" className="btn btn-soft btn-sm" onClick={() => setPreviewing(person.tracker.member_no)}>
-                            Preview
-                          </button>
-                          <button type="button" className="btn btn-soft btn-sm" onClick={() => startJob([person.tracker.member_no], 'print')}>
-                            <Printer size={14} /> Print
-                          </button>
-                          <button type="button" className="btn btn-soft btn-sm" onClick={() => startJob([person.tracker.member_no], 'download')}>
-                            <Download size={14} /> Download
-                          </button>
-                        </>
-                      )}
-                      {person.registration ? (
-                        <button type="button" className="btn btn-soft btn-sm" onClick={() => setSelected(person.tracker.member_no)}>
-                          Review
-                        </button>
-                      ) : (
-                        !person.registration && <span className="muted">—</span>
-                      )}
-                    </div>
+                    {person.registration ? (
+                      <button type="button" className="btn btn-soft btn-sm" onClick={() => setPreviewing(person.tracker.member_no)}>
+                        Preview
+                      </button>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -334,34 +304,6 @@ export default function Registrations() {
     </div>
     <PrintCopies people={printPeople} />
     </>
-  )
-}
-
-function ApprovedPreview({ person, onBack, onPrint, onDownload }) {
-  const form = fromRow(person.registration)
-  return (
-    <div className="page page-wide">
-      <section className="register-official">
-        <header className="register-official-bar">
-          <div>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
-              <ArrowLeft size={16} /> All eRegForms
-            </button>
-            <h1>{person.name}</h1>
-            <p>{memberCode(person.tracker.member_no)} · {person.position}</p>
-          </div>
-          <div className="ereg-actions">
-            <button type="button" className="btn btn-soft" onClick={onPrint}>
-              <Printer size={16} /> Print
-            </button>
-            <button type="button" className="btn btn-primary" onClick={onDownload}>
-              <Download size={16} /> Download
-            </button>
-          </div>
-        </header>
-        <RegistrationPrint form={form} preview />
-      </section>
-    </div>
   )
 }
 
@@ -436,7 +378,7 @@ function PrintCopies({ people }) {
   )
 }
 
-function RegistrationReview({ person, onBack, onSaved }) {
+function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved }) {
   const [confirmed, setConfirmed] = useState(false)
   const [form, setForm] = useState(() => (person?.registration ? fromRow(person.registration) : null))
   const [saving, setSaving] = useState(false)
@@ -496,7 +438,15 @@ function RegistrationReview({ person, onBack, onSaved }) {
           <h1>{person.name}</h1>
           <p className="muted">{memberCode(person.tracker.member_no)} · {person.position}</p>
         </div>
-        <span className={`badge badge-${person.status.key}`}>{person.status.label}</span>
+        <div className="ereg-actions">
+          <button type="button" className="btn btn-soft" onClick={onPrint}>
+            <Printer size={16} /> Print
+          </button>
+          <button type="button" className="btn btn-primary" onClick={onDownload}>
+            <Download size={16} /> Download
+          </button>
+          <span className={`badge badge-${person.status.key}`}>{person.status.label}</span>
+        </div>
       </div>
 
       <RegistrationPrint form={form} preview />
