@@ -12,6 +12,7 @@ import Users from './pages/Users'
 import Settings from './pages/Settings'
 import AuditLog from './pages/AuditLog'
 import ChangePassword from './pages/ChangePassword'
+import Landing from './pages/Landing'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
@@ -27,7 +28,10 @@ function RequireAuth({ children }) {
   const { session, ready } = useAuth()
   const location = useLocation()
   if (!ready) return <PageLoader />
-  if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  if (!session) {
+    if (location.pathname === '/') return <Navigate to="/welcome" replace />
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  }
   return children
 }
 
@@ -79,6 +83,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/welcome" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/password"

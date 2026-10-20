@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, ClipboardList, Search } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardList, Printer, Search } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
@@ -13,6 +13,7 @@ import { supabase } from '../supabaseClient'
 
 const FILTERS = [
   { key: 'all', label: 'All' },
+  { key: 'approved', label: 'Approved' },
   { key: 'submitted', label: 'Submitted' },
   { key: 'missing', label: 'Not yet' },
 ]
@@ -28,6 +29,9 @@ export default function Registrations() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [selected, setSelected] = useState(null)
+  const [previewing, setPreviewing] = useState(null)
+  const [picked, setPicked] = useState(() => new Set())
+  const [printNos, setPrintNos] = useState([])
 
   const load = useCallback(async () => {
     try {
@@ -76,7 +80,8 @@ export default function Registrations() {
   const missingCount = people.length - submittedCount
   const q = query.trim().toLowerCase()
   const visible = people.filter((person) => {
-    if (filter === 'submitted' && !person.registration) return false
+    if (filter === 'approved' && person.status.key !== 'approved') return false
+    if (filter === 'submitted' && person.status.key !== 'submitted') return false
     if (filter === 'missing' && person.registration) return false
     if (!q) return true
     return (
@@ -86,21 +91,90 @@ export default function Registrations() {
     )
   })
 
+  const approved = people.filter((person) => person.status.key === 'approved')
+  const visibleApproved = visible.filter((person) => person.status.key === 'approved')
+  const allVisiblePicked = visibleApproved.length > 0 && visibleApproved.every((person) => picked.has(person.tracker.member_no))
+  const printPeople = printNos
+    .map((memberNo) => people.find((person) => person.tracker.member_no === memberNo))
+    .filter((person) => person?.registration)
+
+  useEffect(() => {
+    if (!printNos.length) return undefined
+    const timer = window.setTimeout(() => window.print(), 80)
+    function done() {
+      setPrintNos([])
+    }
+    window.addEventListener('afterprint', done)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('afterprint', done)
+    }
+  }, [printNos])
+
+  function togglePicked(memberNo) {
+    setPicked((current) => {
+      const next = new Set(current)
+      if (next.has(memberNo)) next.delete(memberNo)
+      else next.add(memberNo)
+      return next
+    })
+  }
+
+  function toggleVisibleApproved() {
+    setPicked((current) => {
+      const next = new Set(current)
+      if (allVisiblePicked) visibleApproved.forEach((person) => next.delete(person.tracker.member_no))
+      else visibleApproved.forEach((person) => next.add(person.tracker.member_no))
+      return next
+    })
+  }
+
+  function printApproved(memberNos) {
+    const ids = memberNos.filter((memberNo) => approved.some((person) => person.tracker.member_no === memberNo))
+    if (!ids.length) return
+    setPrintNos(ids)
+  }
+
+  const previewPerson = people.find((person) => person.tracker.member_no === previewing) || null
+  const chosen = [...picked].filter((memberNo) => approved.some((person) => person.tracker.member_no === memberNo))
+
+  if (previewPerson?.registration) {
+    return (
+      <>
+        <div className="screen-only">
+          <ApprovedPreview
+            person={previewPerson}
+            onBack={() => setPreviewing(null)}
+            onPrint={() => printApproved([previewPerson.tracker.member_no])}
+          />
+        </div>
+        <PrintCopies people={printPeople} />
+      </>
+    )
+  }
+
   if (selected) {
     return (
-      <RegistrationReview
-        person={people.find((person) => person.tracker.member_no === selected) || null}
-        onBack={() => setSelected(null)}
-        onSaved={() => {
-          setSelected(null)
-          load()
-          toast.success('Organization review saved')
-        }}
-      />
+      <>
+        <div className="screen-only">
+          <RegistrationReview
+            person={people.find((person) => person.tracker.member_no === selected) || null}
+            onBack={() => setSelected(null)}
+            onSaved={() => {
+              setSelected(null)
+              load()
+              toast.success('Organization review saved')
+            }}
+          />
+        </div>
+        <PrintCopies people={printPeople} />
+      </>
     )
   }
 
   return (
+    <>
+    <div className="screen-only">
     <div className="page page-wide">
       <header className="page-header">
         <div>
@@ -144,6 +218,23 @@ export default function Registrations() {
         </div>
       </div>
 
+      <div className="ereg-bulk">
+        <p>
+          {approved.length
+            ? `${approved.length} approved ${approved.length === 1 ? 'form' : 'forms'}. Print them together, then choose Save as PDF to keep a copy on this device.`
+            : 'Approved forms can be previewed and printed once an officer marks them approved.'}
+        </p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={!approved.length || printNos.length > 0}
+          onClick={() => printApproved(chosen.length ? chosen : approved.map((person) => person.tracker.member_no))}
+        >
+          <Printer size={16} />
+          {chosen.length ? `Print ${chosen.length} / save to device` : 'Print all approved / save to device'}
+        </button>
+      </div>
+
       {loading ? (
         <div className="skeleton-card">
           <div className="skeleton line w80" />
@@ -154,6 +245,16 @@ export default function Registrations() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>
+                  <input
+                    className="ereg-pick"
+                    type="checkbox"
+                    checked={allVisiblePicked}
+                    disabled={!visibleApproved.length}
+                    onChange={toggleVisibleApproved}
+                    aria-label="Select approved forms"
+                  />
+                </th>
                 <th>Profile</th>
                 <th>Name</th>
                 <th>Position</th>
@@ -165,31 +266,91 @@ export default function Registrations() {
             <tbody>
               {visible.map((person) => (
                 <tr key={person.tracker.member_no}>
+                  <td>
+                    {person.status.key === 'approved' ? (
+                      <input
+                        className="ereg-pick"
+                        type="checkbox"
+                        checked={picked.has(person.tracker.member_no)}
+                        onChange={() => togglePicked(person.tracker.member_no)}
+                        aria-label={`Select ${person.name}`}
+                      />
+                    ) : null}
+                  </td>
                   <td><Avatar src={person.photo} name={person.name} size={40} /></td>
                   <td><strong>{person.name}</strong></td>
                   <td>{person.position}</td>
                   <td className="member-code">{memberCode(person.tracker.member_no)}</td>
                   <td><span className={`badge badge-${person.status.key}`}>{person.status.label}</span></td>
                   <td>
-                    {person.registration ? (
-                      <button type="button" className="btn btn-soft btn-sm" onClick={() => setSelected(person.tracker.member_no)}>
-                        Review
-                      </button>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
+                    <div className="ereg-actions">
+                      {person.status.key === 'approved' && (
+                        <>
+                          <button type="button" className="btn btn-soft btn-sm" onClick={() => setPreviewing(person.tracker.member_no)}>
+                            Preview
+                          </button>
+                          <button type="button" className="btn btn-soft btn-sm" onClick={() => printApproved([person.tracker.member_no])}>
+                            <Printer size={14} /> Print
+                          </button>
+                        </>
+                      )}
+                      {person.registration ? (
+                        <button type="button" className="btn btn-soft btn-sm" onClick={() => setSelected(person.tracker.member_no)}>
+                          Review
+                        </button>
+                      ) : (
+                        !person.registration && <span className="muted">—</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {!visible.length && (
                 <tr>
-                  <td colSpan={6}>No members match this list.</td>
+                  <td colSpan={7}>No members match this list.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       )}
+    </div>
+    </div>
+    <PrintCopies people={printPeople} />
+    </>
+  )
+}
+
+function ApprovedPreview({ person, onBack, onPrint }) {
+  const form = fromRow(person.registration)
+  return (
+    <div className="page page-wide">
+      <section className="register-official">
+        <header className="register-official-bar">
+          <div>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
+              <ArrowLeft size={16} /> All eRegForms
+            </button>
+            <h1>{person.name}</h1>
+            <p>{memberCode(person.tracker.member_no)} · {person.position}. This approved form can be printed or saved as a PDF on this device.</p>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={onPrint}>
+            <Printer size={16} /> Print / save to device
+          </button>
+        </header>
+        <RegistrationPrint form={form} preview />
+      </section>
+    </div>
+  )
+}
+
+function PrintCopies({ people }) {
+  if (!people.length) return null
+  return (
+    <div className="ereg-print-target">
+      {people.map((person) => (
+        <RegistrationPrint key={person.tracker.member_no} form={fromRow(person.registration)} />
+      ))}
     </div>
   )
 }
