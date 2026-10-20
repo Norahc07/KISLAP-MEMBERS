@@ -35,6 +35,23 @@ create table if not exists public.positions (
 create index if not exists positions_unit_idx   on public.positions(unit_id);
 create index if not exists positions_member_idx on public.positions(member_id);
 
+-- Membership requirement tracker. member_no 1 displays as KISLAP-26-001.
+create table if not exists public.membership_tracker (
+  id                 uuid primary key default gen_random_uuid(),
+  member_no          int not null unique check (member_no > 0),
+  member_id          uuid references public.members(id) on delete set null,
+  full_name          text not null default '',
+  tracker_role       text not null default 'member' check (tracker_role in ('officer', 'director', 'assistant', 'member')),
+  gforms             boolean not null default false,
+  registration_form  boolean not null default false,
+  photo_2x2          boolean not null default false,
+  interview          boolean not null default false,
+  membership_fee     boolean not null default false,
+  created_at         timestamptz not null default now()
+);
+
+create index if not exists membership_tracker_member_idx on public.membership_tracker(member_id);
+
 -- Emails listed here are allowed to create / edit / delete data.
 create table if not exists public.admins (
   email text primary key
@@ -55,15 +72,16 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Row Level Security: everyone can read, only admins can write
 -- ---------------------------------------------------------------------------
-alter table public.members   enable row level security;
-alter table public.units     enable row level security;
-alter table public.positions enable row level security;
-alter table public.admins    enable row level security;
+alter table public.members            enable row level security;
+alter table public.units              enable row level security;
+alter table public.positions          enable row level security;
+alter table public.membership_tracker enable row level security;
+alter table public.admins             enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['members', 'units', 'positions'] loop
+  foreach t in array array['members', 'units', 'positions', 'membership_tracker'] loop
     execute format('drop policy if exists "Public read" on public.%I', t);
     execute format('drop policy if exists "Admin write" on public.%I', t);
     execute format('create policy "Public read" on public.%I for select using (true)', t);
@@ -94,7 +112,7 @@ create policy "Avatar admin delete" on storage.objects for delete to authenticat
 do $$
 declare t text;
 begin
-  foreach t in array array['members', 'units', 'positions'] loop
+  foreach t in array array['members', 'units', 'positions', 'membership_tracker'] loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
     exception when duplicate_object then null;

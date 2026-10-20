@@ -1,20 +1,34 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, FileText, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 
-const NAV = [
-  { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
-  { to: '/members', label: 'Members', icon: Users },
-  { to: '/assign', label: 'Assign Roles', icon: Network },
-]
-
 export default function Layout() {
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut, isAdmin, canSeeTracker, setupNeeded } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+
+  const nav = [
+    { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
+    ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
+    { to: '/register', label: 'Registration', icon: FileText },
+    ...(isAdmin
+      ? [
+          { to: '/members', label: 'Members', icon: Users },
+          { to: '/assign', label: 'Assign Roles', icon: Network },
+          { to: '/users', label: 'Users', icon: IdCard },
+        ]
+      : []),
+    ...(canSeeTracker ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
+    ...(isAdmin
+      ? [
+          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/audit', label: 'Audit log', icon: ScrollText },
+        ]
+      : []),
+  ]
 
   function handleSignOut() {
     setSigningOut(true)
@@ -29,7 +43,7 @@ export default function Layout() {
           <Logo size={34} />
           <span>KISLAP</span>
         </div>
-        <button className="icon-btn" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
+        <button className="icon-btn" onClick={() => setOpen((value) => !value)} aria-label="Toggle menu">
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
@@ -44,7 +58,7 @@ export default function Layout() {
         </div>
 
         <nav className="nav">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+          {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className="nav-link" onClick={() => setOpen(false)}>
               <Icon size={19} />
               <span>{label}</span>
@@ -57,7 +71,7 @@ export default function Layout() {
             <div className="user-dot" />
             <div>
               <small>Signed in as</small>
-              <span>{user?.email}</span>
+              <span>{profile?.username || user?.email}</span>
             </div>
           </div>
           <button className="btn btn-sidebar" onClick={handleSignOut} disabled={signingOut}>
@@ -68,6 +82,11 @@ export default function Layout() {
       {open && <div className="sidebar-scrim" onClick={() => setOpen(false)} />}
 
       <main className="main">
+        {isAdmin && setupNeeded && (
+          <div className="alert">
+            Member accounts are not in Supabase yet. Run <code>supabase/accounts.sql</code> in the SQL Editor.
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

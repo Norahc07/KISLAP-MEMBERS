@@ -3,7 +3,14 @@ import Layout from './components/Layout'
 import OrgChart from './pages/OrgChart'
 import Members from './pages/Members'
 import Assignments from './pages/Assignments'
+import Tracker from './pages/Tracker'
 import Login from './pages/Login'
+import Register from './pages/Register'
+import Account from './pages/Account'
+import Users from './pages/Users'
+import Settings from './pages/Settings'
+import AuditLog from './pages/AuditLog'
+import ChangePassword from './pages/ChangePassword'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
@@ -21,6 +28,37 @@ function RequireAuth({ children }) {
   if (!ready) return <PageLoader />
   if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return children
+}
+
+function RequireFreshPassword({ children }) {
+  const { mustChangePassword } = useAuth()
+  if (mustChangePassword) return <Navigate to="/password" replace />
+  return children
+}
+
+function RequireAdmin({ children }) {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <Navigate to="/account" replace />
+  return children
+}
+
+function RequireTracker({ children }) {
+  const { canSeeTracker } = useAuth()
+  if (!canSeeTracker) return <Navigate to="/account" replace />
+  return children
+}
+
+function MemberAccount() {
+  const { isAdmin } = useAuth()
+  if (isAdmin) return <Navigate to="/users" replace />
+  return <Account />
+}
+
+function PasswordGate() {
+  const { mustChangePassword, ready } = useAuth()
+  if (!ready) return <PageLoader />
+  if (!mustChangePassword) return <Navigate to="/account" replace />
+  return <ChangePassword forced />
 }
 
 export default function App() {
@@ -42,15 +80,73 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route
+        path="/password"
         element={
           <RequireAuth>
-            <Layout />
+            <PasswordGate />
+          </RequireAuth>
+        }
+      />
+      <Route
+        element={
+          <RequireAuth>
+            <RequireFreshPassword>
+              <Layout />
+            </RequireFreshPassword>
           </RequireAuth>
         }
       >
         <Route index element={<OrgChart />} />
-        <Route path="members" element={<Members />} />
-        <Route path="assign" element={<Assignments />} />
+        <Route path="account" element={<MemberAccount />} />
+        <Route path="register" element={<Register />} />
+        <Route
+          path="members"
+          element={
+            <RequireAdmin>
+              <Members />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="assign"
+          element={
+            <RequireAdmin>
+              <Assignments />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="tracker"
+          element={
+            <RequireTracker>
+              <Tracker />
+            </RequireTracker>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <RequireAdmin>
+              <Users />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <RequireAdmin>
+              <Settings />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="audit"
+          element={
+            <RequireAdmin>
+              <AuditLog />
+            </RequireAdmin>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

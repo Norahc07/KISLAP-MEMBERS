@@ -50,6 +50,27 @@ export const deletePosition = (id) => supabase.from('positions').delete().eq('id
 
 export const assignMember = (positionId, memberId) => updatePosition(positionId, { member_id: memberId })
 
+export async function fetchMemberPhotos() {
+  const { data, error } = await supabase.from('membership_tracker').select('member_no, members(photo_url)')
+  if (error) throw error
+  return new Map(
+    (data || [])
+      .filter((row) => row.members?.photo_url)
+      .map((row) => [row.member_no, row.members.photo_url]),
+  )
+}
+
+export async function fetchTracker() {
+  const [tracker, members] = await Promise.all([
+    supabase.from('membership_tracker').select('*').order('member_no'),
+    supabase.from('members').select('id, full_name, photo_url').order('full_name'),
+  ])
+  return { rows: unwrap(tracker), members: unwrap(members) }
+}
+
+export const updateTracker = (id, values) =>
+  supabase.from('membership_tracker').update(values).eq('id', id).select().single().then(unwrap)
+
 // Photos
 export async function uploadPhoto(file) {
   const blob = await squareResize(file, 512)
@@ -57,6 +78,16 @@ export async function uploadPhoto(file) {
   unwrap(await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' }))
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   return { photo_url: data.publicUrl, photo_path: path }
+}
+
+export async function uploadProfilePhoto(userId, file) {
+  const blob = await squareResize(file, 512)
+  const path = `profiles/${userId}.jpg`
+  unwrap(await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: true }))
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  const photo_url = `${data.publicUrl}?v=${Date.now()}`
+  unwrap(await supabase.rpc('save_profile_photo', { p_url: photo_url, p_path: path }))
+  return { photo_url, photo_path: path }
 }
 
 export async function removePhoto(path) {

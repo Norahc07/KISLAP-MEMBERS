@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { Eye, EyeOff, Lock, UserRound } from 'lucide-react'
 import Logo from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const { session, ready, signIn } = useAuth()
+  const { session, ready, signIn, mustChangePassword } = useAuth()
   const location = useLocation()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -23,8 +23,10 @@ export default function Login() {
   }
 
   if (session) {
+    if (mustChangePassword) return <Navigate to="/password" replace />
     const from = location.state?.from
-    return <Navigate to={from && from !== '/login' ? from : '/'} replace />
+    const next = from && from !== '/login' && from !== '/password' ? from : '/'
+    return <Navigate to={next} replace />
   }
 
   async function handleSubmit(e) {
@@ -32,9 +34,9 @@ export default function Login() {
     setBusy(true)
     setError('')
     try {
-      const { error } = await signIn(email.trim(), password)
+      const { error } = await signIn(username.trim(), password)
       if (error) {
-        setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message)
+        setError(error.message === 'Invalid login credentials' ? 'Incorrect username or password.' : error.message)
       }
     } catch {
       setError('Unable to reach the server. Check your internet connection.')
@@ -50,20 +52,19 @@ export default function Login() {
         <Logo size={120} />
         <div>
           <h1>KISLAP Youth Volunteers</h1>
-          <p className="muted">Sign in to manage members and roles</p>
+          <p className="muted">Sign in with your membership ID. The admin username is admin.</p>
         </div>
 
         <label className="field">
-          <span>Email</span>
+          <span>Username</span>
           <div className="input-icon">
-            <Mail size={17} />
+            <UserRound size={17} />
             <input
               className="input"
-              type="email"
-              autoComplete="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              placeholder="KISLAP-26-001"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
             />
@@ -98,6 +99,7 @@ export default function Login() {
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
+        <p className="muted small">After the first sign-in, choose your own password. It is saved to your account immediately.</p>
       </form>
     </div>
   )
