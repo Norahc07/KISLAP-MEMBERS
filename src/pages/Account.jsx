@@ -75,10 +75,6 @@ export default function Account() {
           <h1>{profile?.full_name || 'My account'}</h1>
           <p className="muted">Your personal KISLAP account.</p>
           <dl className="account-meta">
-            <div>
-              <dt>Username</dt>
-              <dd>{profile?.username || user?.email}</dd>
-            </div>
             {code && (
               <div>
                 <dt>Membership ID</dt>

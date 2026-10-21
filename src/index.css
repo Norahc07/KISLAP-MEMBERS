@@ -3049,7 +3049,22 @@ select.input {
 @container (max-width: 680px) {
   .account-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+    padding: 28px 18px 22px;
+  }
+
+  .account-identity,
+  .account-meta,
+  .account-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .account-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .account-pass,
@@ -3065,7 +3080,22 @@ select.input {
 @media (max-width: 800px) {
   .account-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+    padding: 28px 18px 22px;
+  }
+
+  .account-identity,
+  .account-meta,
+  .account-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .account-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .account-pass,
