@@ -1,6 +1,7 @@
 -- Membership registration form.
 -- Run once in Supabase → SQL Editor after membership-tracker.sql.
 -- Safe to run again. Saved answers and tracker checkboxes are kept.
+-- A member can update their own submitted or approved form. Approval status stays as it is.
 
 create table if not exists public.registrations (
   member_no              int primary key references public.membership_tracker(member_no) on delete cascade,
@@ -109,8 +110,14 @@ begin
     raise exception 'Membership ID % was not found. Use the ID given by KISLAP.', 'KISLAP-26-' || lpad(n::text, 3, '0');
   end if;
 
-  if exists (select 1 from public.registrations where member_no = n) and not public.is_admin() then
-    raise exception 'This membership ID already has a registration. Please ask a KISLAP officer to update it.';
+  if exists (select 1 from public.registrations where member_no = n)
+     and not public.is_admin()
+     and not exists (
+       select 1 from public.profiles
+       where id = auth.uid() and member_no = n
+     )
+  then
+    raise exception 'You can only update your own registration.';
   end if;
 
   if coalesce(payload->>'surname', '') = ''

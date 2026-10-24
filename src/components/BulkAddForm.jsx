@@ -2,8 +2,9 @@ import { useState } from 'react'
 import Modal from './Modal'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
-import { createMembers } from '../lib/api'
+import { enrollMembers } from '../lib/api'
 import { errorMessage } from '../lib/constants'
+import { memberCode } from '../lib/tracker'
 
 export default function BulkAddForm({ onClose }) {
   const { members, reload } = useData()
@@ -19,9 +20,15 @@ export default function BulkAddForm({ onClose }) {
     if (!fresh.length) return toast.error('No new names to add.')
     setSaving(true)
     try {
-      await createMembers(fresh)
+      const created = await enrollMembers(fresh)
       await reload()
-      toast.success(`${fresh.length} member${fresh.length > 1 ? 's' : ''} added`)
+      const numbered = created.filter((row) => row.member_no)
+      const span = numbered.length
+        ? numbered.length === 1
+          ? ` ${memberCode(numbered[0].member_no)}.`
+          : ` ${memberCode(numbered[0].member_no)}–${memberCode(numbered[numbered.length - 1].member_no)}.`
+        : ''
+      toast.success(`${created.length} member${created.length > 1 ? 's' : ''} added.${span} Usernames and default passwords are on Users.`)
       onClose()
     } catch (err) {
       toast.error(errorMessage(err))

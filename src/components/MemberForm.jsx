@@ -4,7 +4,7 @@ import Modal from './Modal'
 import Avatar from './Avatar'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
-import { assignMember, createMember, removePhoto, updateMember, uploadPhoto } from '../lib/api'
+import { assignMember, enrollMember, removePhoto, updateMember, uploadPhoto } from '../lib/api'
 import { errorMessage } from '../lib/constants'
 
 export default function MemberForm({ member, onClose }) {
@@ -57,19 +57,25 @@ export default function MemberForm({ member, onClose }) {
       if (file) photo = await uploadPhoto(file)
       else if (!preview) photo = { photo_url: null, photo_path: null }
 
-      const saved = member
-        ? await updateMember(member.id, { full_name, ...photo })
-        : await createMember({ full_name, ...photo })
-
-      if (member?.photo_path && member.photo_path !== photo.photo_path) await removePhoto(member.photo_path)
-
-      if (positionId !== currentPositionId) {
-        if (currentPositionId) await assignMember(currentPositionId, null)
-        if (positionId) await assignMember(positionId, saved.id)
+      let saved = member
+      if (member) {
+        saved = await updateMember(member.id, { full_name, ...photo })
+        if (member.photo_path && member.photo_path !== photo.photo_path) await removePhoto(member.photo_path)
+        if (positionId !== currentPositionId) {
+          if (currentPositionId) await assignMember(currentPositionId, null)
+          if (positionId) await assignMember(positionId, saved.id)
+        }
+      } else {
+        saved = await enrollMember({
+          full_name,
+          photo_url: photo.photo_url,
+          photo_path: photo.photo_path,
+          position_id: positionId || null,
+        })
       }
 
       await reload()
-      toast.success(member ? 'Member updated' : 'Member added')
+      toast.success(member ? 'Member updated' : `${saved.full_name} is ${saved.username}. The default password is on Users.`)
       onClose()
     } catch (err) {
       toast.error(errorMessage(err))

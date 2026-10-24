@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { TRACKER_ACCESS_ROLES } from '../lib/accounts'
@@ -86,7 +87,10 @@ export default function Settings() {
 
         <label className="field">
           <span>Members who can open the tracker</span>
-          <input className="input" placeholder="Search a member name or ID" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <div className="search">
+            <Search size={17} />
+            <input placeholder="Search a member name or ID" value={query} onChange={(event) => setQuery(event.target.value)} />
+          </div>
         </label>
         <div className="check-list">
           {visibleRoster.map((row) => (

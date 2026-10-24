@@ -93,14 +93,18 @@ export function AuthProvider({ children }) {
     setupNeeded,
     ready,
     isAdmin,
+    isAdviser: profile?.role === 'adviser',
     mustChangePassword,
     canSeeTracker: canSeeTracker(profile, settings, isAdmin),
     refreshAccess,
     markPasswordChanged,
     signIn: async (username, password) => {
-      const email = loginEmail(username)
-      if (!email) return { error: { message: 'Use admin or a membership ID such as KISLAP-26-001.' } }
-      const result = await supabase.auth.signInWithPassword({ email, password })
+      const email = loginEmail(String(username || '').replace(/[\u200B-\u200D\uFEFF]/g, ''))
+      if (!email) return { error: { message: 'Use admin, a membership ID such as KISLAP-26-001, or an adviser username such as RICHMOND.BANAAG.' } }
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password: String(password || '').trim(),
+      })
       if (!result.error) {
         supabase.rpc('log_audit', { p_action: 'sign_in', p_summary: 'Signed in', p_detail: {} }).then(() => {}, () => {})
       }

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import Logo from './Logo'
+import { cleanSignatureSource } from '../lib/signature'
 import { memberCode } from '../lib/tracker'
 import {
   AVAILABILITY,
@@ -12,13 +14,43 @@ import {
   parseMemberNo,
 } from '../lib/registration'
 
-function renderFieldValue(value) {
+function renderFieldValue(value, scale) {
   if (!value) return '—'
-  if (isSignatureImage(value)) return <img className="sign-preview" src={value} alt="E-signature" />
+  if (isSignatureImage(value)) return <SignatureInk src={value} scale={scale} />
   return value
 }
 
-export default function RegistrationPrint({ form, lookup, preview = false }) {
+function SignatureInk({ src, scale = 1 }) {
+  const [shown, setShown] = useState('')
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    setReady(false)
+    setShown('')
+    cleanSignatureSource(src).then((next) => {
+      if (!live) return
+      setShown(next || src)
+      setReady(true)
+    })
+    return () => {
+      live = false
+    }
+  }, [src])
+
+  if (!isSignatureImage(src)) return src || '—'
+  return (
+    <img
+      className="sign-preview"
+      src={shown || undefined}
+      alt="E-signature"
+      data-sign-ready={ready ? '1' : '0'}
+      style={{ '--sign-scale': scale }}
+    />
+  )
+}
+
+export default function RegistrationPrint({ form, lookup, preview = false, signatureScale = 1 }) {
   const code = parseMemberNo(form.memberNo)
   const name = [form.firstName, form.middleName, form.surname, form.suffix].filter(Boolean).join(' ')
   const schools = educationVisibility(form.educationLevel, form.schoolWorkStatus)
@@ -92,7 +124,7 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
   ]
 
   return (
-    <article className={preview ? 'registration-sheet' : 'registration-print'}>
+    <article className={preview ? 'registration-sheet' : 'registration-print'} style={{ '--sign-scale': signatureScale }}>
       <table className="print-frame">
         <thead>
           <tr><td><div className="print-page-gap" /></td></tr>
@@ -138,7 +170,7 @@ export default function RegistrationPrint({ form, lookup, preview = false }) {
                 <figure key={role} className="sign-block">
                   <figcaption>{role}</figcaption>
                   <p className="sign-name">{printed || '—'}</p>
-                  <div className="sign-line">{renderFieldValue(signature)}</div>
+                  <div className="sign-line">{renderFieldValue(signature, signatureScale)}</div>
                   <p className="sign-date"><span>Date</span><strong>{signedOn || '—'}</strong></p>
                 </figure>
               ))}

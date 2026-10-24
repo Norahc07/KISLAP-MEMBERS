@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Users, Briefcase, CheckCircle2, CircleDashed, Search } from 'lucide-react'
+import { Users, UserRound, GraduationCap, ClipboardList, Search } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import Logo from '../components/Logo'
 import { useData } from '../context/DataContext'
 import { LEVELS } from '../lib/constants'
 
 export default function OrgChart() {
-  const { units, positionsByUnit, membersById, stats, loading, error } = useData()
+  const { units, positionsByUnit, membersById, roster, stats, loading, error } = useData()
   const [query, setQuery] = useState('')
 
   const q = query.trim().toLowerCase()
@@ -20,8 +20,6 @@ export default function OrgChart() {
   const committees = units
     .filter((u) => u.kind === 'committee')
     .filter((u) => !q || u.name.toLowerCase().includes(q) || (positionsByUnit.get(u.id) ?? []).some(matches))
-
-  const fillRate = stats.positions ? Math.round((stats.filled / stats.positions) * 100) : 0
 
   return (
     <div className="page">
@@ -39,19 +37,24 @@ export default function OrgChart() {
 
       <section className="stats">
         <Stat icon={Users} label="Members" value={stats.members} tone="blue" />
-        <Stat icon={Briefcase} label="Positions" value={stats.positions} tone="violet" />
-        <Stat icon={CheckCircle2} label="Filled" value={stats.filled} tone="green" />
-        <Stat icon={CircleDashed} label="Vacant" value={stats.vacant} tone="amber" />
-        <div className="stat stat-progress">
-          <div className="stat-top">
-            <span>Fill rate</span>
-            <strong>{fillRate}%</strong>
-          </div>
-          <div className="progress">
-            <div className="progress-bar" style={{ width: `${fillRate}%` }} />
-          </div>
-        </div>
+        <Stat icon={GraduationCap} label="Advisers" value={roster.advisers} tone="violet" />
+        <Stat icon={UserRound} label="No member ID" value={stats.withoutId} tone="amber" />
+        <Stat icon={ClipboardList} label="Forms submitted" value={stats.submitted} tone="green" />
       </section>
+
+      <p className="roster-note">
+        Member count follows the tracker and stays linked to users and submitted forms.
+        Advisers have their own accounts and are not counted as members.
+      </p>
+      {roster.withoutIdPeople.length > 0 && (
+        <div className="roster-hold">
+          {roster.withoutIdPeople.map((person) => (
+            <span key={person.id} className="crew-chip">
+              {person.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="toolbar">
         <div className="search">

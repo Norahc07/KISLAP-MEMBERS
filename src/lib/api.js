@@ -17,17 +17,36 @@ export async function fetchAll() {
 }
 
 // Members
-export const createMember = (values) =>
-  supabase.from('members').insert(values).select().single().then(unwrap)
+function missingEnroll(error) {
+  if (error?.code === 'PGRST202') {
+    return new Error('Run supabase/enroll-member.sql in the Supabase SQL Editor, then try again.')
+  }
+  return error
+}
 
-export const createMembers = (names) =>
-  supabase.from('members').insert(names.map((full_name) => ({ full_name }))).select().then(unwrap)
+export async function enrollMember({ full_name, photo_url = null, photo_path = null, position_id = null }) {
+  const { data, error } = await supabase.rpc('enroll_member', {
+    p_name: full_name,
+    p_photo_url: photo_url,
+    p_photo_path: photo_path,
+    p_position_id: position_id,
+  })
+  if (error) throw missingEnroll(error)
+  return data
+}
+
+export async function enrollMembers(names) {
+  const { data, error } = await supabase.rpc('enroll_members', { p_names: names })
+  if (error) throw missingEnroll(error)
+  return data || []
+}
 
 export const updateMember = (id, values) =>
   supabase.from('members').update(values).eq('id', id).select().single().then(unwrap)
 
 export async function deleteMember(member) {
-  unwrap(await supabase.from('members').delete().eq('id', member.id))
+  const { error } = await supabase.rpc('delete_enrolled_member', { p_member_id: member.id })
+  if (error) throw missingEnroll(error)
   if (member.photo_path) await removePhoto(member.photo_path)
 }
 

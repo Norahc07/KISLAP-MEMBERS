@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Plus, Printer } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Pencil, Plus, Printer } from 'lucide-react'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
 import { useAuth } from '../context/AuthContext'
@@ -41,6 +41,8 @@ const STEPS = [...APPLICANT_STEPS, REVIEW_STEP]
 
 export default function Register() {
   const { isAdmin, profile, ready } = useAuth()
+  const [params] = useSearchParams()
+  const requestedMember = params.get('member') || ''
   const steps = STEPS
   const [stepIndex, setStepIndex] = useState(0)
   const [form, setForm] = useState(emptyRegistration)
@@ -52,6 +54,8 @@ export default function Register() {
   const [done, setDone] = useState(null)
   const [roster, setRoster] = useState([])
   const [gate, setGate] = useState('checking')
+  const [editing, setEditing] = useState(false)
+  const [savedStatus, setSavedStatus] = useState('')
 
   const step = steps[Math.min(stepIndex, steps.length - 1)]
   const setField = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
@@ -93,9 +97,11 @@ export default function Register() {
     const existing = await supabase.from('registrations').select('*').eq('member_no', memberNo).maybeSingle()
     if (existing.data) {
       setForm(fromRow(existing.data))
+      setSavedStatus(existing.data.application_status || 'pending')
       if (!isAdmin) setGate(existing.data.application_status === 'approved' ? 'verified' : 'pending')
     } else {
       setForm({ ...emptyRegistration(), memberNo: String(memberNo) })
+      setSavedStatus('')
       if (!isAdmin) setGate('open')
     }
     return next
@@ -122,6 +128,8 @@ export default function Register() {
     if (!ready) return undefined
     if (isAdmin) {
       setGate('open')
+      const member = requestedMember
+      if (member) findMember(member).catch(() => {})
       return undefined
     }
     if (!profile?.member_no) {
@@ -130,7 +138,7 @@ export default function Register() {
     }
     findMember(String(profile.member_no)).catch(() => setGate('open'))
     return undefined
-  }, [isAdmin, ready, profile?.member_no])
+  }, [isAdmin, ready, profile?.member_no, requestedMember])
 
   async function handleNext() {
     const currentLookup = step.id === 'id' ? await findMember() : lookup
@@ -179,27 +187,46 @@ export default function Register() {
   if (done) {
     return (
       <RegisterShell form={form} lookup={lookup}>
-        <section className="register-card register-success">
-          <CheckCircle2 size={42} />
-          <h1>Registration received</h1>
-          <p>
-            <strong>{memberCode(done)}</strong> is saved, and the signature is on the preview below. An officer still
-            needs to verify it. The e-registration form opens from My account after that verification.
-          </p>
-          <RegistrationPrint form={form} lookup={lookup} preview />
-          <div className="register-nav">
-            <button type="button" className="btn btn-soft" onClick={() => window.print()}>
-              <Printer size={16} /> Print
-            </button>
-            <Link to="/account" className="btn btn-primary">
-              Back to my account
-            </Link>
-            {isAdmin && (
-              <Link to="/tracker" className="btn btn-soft">
-                Open tracker
+        <section className="register-official register-saved">
+          <header className="register-official-bar">
+            <div>
+              <p className="eyebrow">
+                <CheckCircle2 size={18} /> {savedStatus ? 'Saved' : 'Submitted'}
+              </p>
+              <h1>{savedStatus ? 'Registration updated' : 'Registration received'}</h1>
+              <p>
+                {savedStatus ? (
+                  savedStatus === 'approved' ? (
+                    <>
+                      <strong>{memberCode(done)}</strong> is updated. The approved form now shows these details.
+                    </>
+                  ) : (
+                    <>
+                      <strong>{memberCode(done)}</strong> is updated. An officer can still verify the registration.
+                    </>
+                  )
+                ) : (
+                  <>
+                    <strong>{memberCode(done)}</strong> is saved. You can open this form again from My account to correct any details.
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="register-nav">
+              <button type="button" className="btn btn-soft" onClick={() => window.print()}>
+                <Printer size={16} /> Print
+              </button>
+              <Link to="/account" className="btn btn-primary">
+                Back to my account
               </Link>
-            )}
-          </div>
+              {isAdmin && (
+                <Link to="/tracker" className="btn btn-soft">
+                  Open tracker
+                </Link>
+              )}
+            </div>
+          </header>
+          <RegistrationPrint form={form} lookup={lookup} preview />
         </section>
       </RegisterShell>
     )
@@ -216,37 +243,38 @@ export default function Register() {
     )
   }
 
-  if (!isAdmin && gate === 'pending') {
-    return (
-      <RegisterShell>
-        <section className="register-card register-success">
-          <h1>Waiting for verification</h1>
-          <p>
-            Your registration is submitted. An officer needs to verify it before the e-registration form is available.
-          </p>
-          <Link to="/account" className="btn btn-primary">
-            Back to my account
-          </Link>
-        </section>
-      </RegisterShell>
-    )
-  }
-
-  if (!isAdmin && gate === 'verified') {
+  if (!isAdmin && !editing && (gate === 'pending' || gate === 'verified')) {
+    const approved = gate === 'verified'
     return (
       <RegisterShell form={form} lookup={lookup}>
         <section className="register-official">
           <header className="register-official-bar">
             <div>
-              <p className="eyebrow">Verified</p>
-              <h1>E-registration form</h1>
-              <p>An officer verified this registration. The signature on the form is the e-sign you uploaded.</p>
+              <p className="eyebrow">{approved ? 'Approved' : 'Submitted'}</p>
+              <h1>Your registration form</h1>
+              <p>
+                {approved
+                  ? 'This registration is approved. Review the form below and update any missing or incorrect details.'
+                  : 'This registration is submitted. Review the form below and update any missing or incorrect details.'}
+              </p>
             </div>
             <div className="register-nav">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditing(true)
+                  setStepIndex(0)
+                  setMissing([])
+                  setSubmitError('')
+                }}
+              >
+                <Pencil size={16} /> Edit details
+              </button>
               <button type="button" className="btn btn-soft" onClick={() => window.print()}>
                 <Printer size={16} /> Print
               </button>
-              <Link to="/account" className="btn btn-primary">
+              <Link to="/account" className="btn btn-ghost">
                 Back to my account
               </Link>
             </div>
@@ -267,12 +295,12 @@ export default function Register() {
                 type="button"
                 className={index === stepIndex ? 'active' : index < stepIndex ? 'done' : ''}
                 onClick={() => {
-                  if (isAdmin || index <= stepIndex) {
+                  if (isAdmin || savedStatus || index <= stepIndex) {
                     setMissing([])
                     setStepIndex(index)
                   }
                 }}
-                disabled={!isAdmin && index > stepIndex}
+                disabled={!isAdmin && !savedStatus && index > stepIndex}
               >
                 <span>{index < stepIndex ? <Check size={14} /> : index + 1}</span>
                 <strong>{item.title}</strong>
@@ -314,6 +342,7 @@ export default function Register() {
             <p className="muted">
               Membership ID <strong>{profile?.member_no ? memberCode(profile.member_no) : '—'}</strong>
               {lookup?.row?.full_name ? ` · ${lookup.row.full_name}` : ''}
+              {savedStatus ? ' · update any detail, then save.' : ''}
             </p>
           )}
 
@@ -350,7 +379,7 @@ export default function Register() {
                   <Printer size={16} /> Print
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Submitting…' : 'Submit registration'}
+                  {saving ? 'Saving…' : savedStatus ? 'Save updates' : 'Submit registration'}
                 </button>
               </div>
             ) : (
@@ -916,7 +945,7 @@ function SignatureField({ label, required, value, onChange }) {
         {label}
         {required ? ' *' : ''}
       </span>
-      <p className="muted small">Upload a signature written on a white background. The white area is removed so it sits on the form.</p>
+      <p className="muted small">Upload a signature on white or light paper. The background is removed automatically.</p>
       <label className="sign-pad">
         {isSignatureImage(value) ? <img src={value} alt="" /> : <span>{busy ? 'Preparing signature…' : 'Choose signature image'}</span>}
         {!isSignatureImage(value) && value ? <small>A typed signature is already saved. Upload an image to replace it.</small> : null}

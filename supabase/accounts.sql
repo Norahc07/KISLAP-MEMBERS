@@ -14,7 +14,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
   member_no int unique references public.membership_tracker(member_no) on delete set null,
-  role text not null check (role in ('admin', 'officer', 'director', 'assistant', 'member')),
+  role text not null check (role in ('admin', 'officer', 'director', 'assistant', 'member', 'adviser')),
   full_name text not null default '',
   must_change_password boolean not null default true,
   initial_password text,

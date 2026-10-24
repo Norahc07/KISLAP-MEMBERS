@@ -5,6 +5,7 @@ import MemberOptions from '../components/MemberOptions'
 import PositionForm from '../components/PositionForm'
 import UnitForm from '../components/UnitForm'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import { assignMember, deletePosition, deleteUnit } from '../lib/api'
@@ -17,6 +18,7 @@ const FILTERS = [
 ]
 
 export default function Assignments() {
+  const { isAdviser } = useAuth()
   const { units, positionsByUnit, membersById, stats, loading, error, reload } = useData()
   const toast = useToast()
   const [query, setQuery] = useState('')
@@ -53,20 +55,24 @@ export default function Assignments() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Step 2</p>
-          <h1>Assign Roles</h1>
+          <p className="eyebrow">{isAdviser ? 'Organization' : 'Step 2'}</p>
+          <h1>{isAdviser ? 'Assigned Roles' : 'Assign Roles'}</h1>
           <p className="muted">
-            {stats.filled} filled · {stats.vacant} vacant across {units.length} groups
+            {isAdviser
+              ? 'View who holds each role.'
+              : `${stats.filled} filled · ${stats.vacant} vacant across ${units.length} groups`}
           </p>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-soft" onClick={() => setUnitForm({})}>
-            <FolderPlus size={18} /> New committee
-          </button>
-          <button className="btn btn-primary" onClick={() => setPositionForm({})} disabled={!units.length}>
-            <Plus size={18} /> Add position
-          </button>
-        </div>
+        {!isAdviser && (
+          <div className="header-actions">
+            <button className="btn btn-soft" onClick={() => setUnitForm({})}>
+              <FolderPlus size={18} /> New committee
+            </button>
+            <button className="btn btn-primary" onClick={() => setPositionForm({})} disabled={!units.length}>
+              <Plus size={18} /> Add position
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="toolbar">
@@ -118,27 +124,29 @@ export default function Assignments() {
                   <div className="mini-progress">
                     <div style={{ width: `${all.length ? (filled / all.length) * 100 : 0}%` }} />
                   </div>
-                  <div className="unit-actions">
-                    <button className="btn btn-soft btn-sm" onClick={() => setPositionForm({ unitId: unit.id })}>
-                      <Plus size={15} /> Position
-                    </button>
-                    <button className="icon-btn" onClick={() => setUnitForm({ unit })} aria-label="Edit committee">
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      className="icon-btn danger"
-                      aria-label="Delete committee"
-                      onClick={() =>
-                        setConfirm({
-                          title: 'Delete committee?',
-                          message: `"${unit.name}" and all ${all.length} of its positions will be deleted. Members are kept.`,
-                          action: () => run(() => deleteUnit(unit.id), 'Committee deleted'),
-                        })
-                      }
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  {!isAdviser && (
+                    <div className="unit-actions">
+                      <button className="btn btn-soft btn-sm" onClick={() => setPositionForm({ unitId: unit.id })}>
+                        <Plus size={15} /> Position
+                      </button>
+                      <button className="icon-btn" onClick={() => setUnitForm({ unit })} aria-label="Edit committee">
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        className="icon-btn danger"
+                        aria-label="Delete committee"
+                        onClick={() =>
+                          setConfirm({
+                            title: 'Delete committee?',
+                            message: `"${unit.name}" and all ${all.length} of its positions will be deleted. Members are kept.`,
+                            action: () => run(() => deleteUnit(unit.id), 'Committee deleted'),
+                          })
+                        }
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
                 </header>
 
                 {shown.length ? (
@@ -155,36 +163,40 @@ export default function Assignments() {
                             </div>
                           </div>
                           <span className={`badge level-${p.level}`}>{LEVELS[p.level].label}</span>
-                          <select
-                            className="input input-sm assign-select"
-                            value={p.member_id ?? ''}
-                            onChange={(e) => handleAssign(p, e.target.value || null)}
-                          >
-                            <MemberOptions />
-                          </select>
-                          <div className="row-actions">
-                            {m && (
-                              <button className="icon-btn" onClick={() => handleAssign(p, null)} title="Mark vacant">
-                                <UserMinus size={15} />
-                              </button>
-                            )}
-                            <button className="icon-btn" onClick={() => setPositionForm({ position: p })} title="Edit">
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              className="icon-btn danger"
-                              title="Delete"
-                              onClick={() =>
-                                setConfirm({
-                                  title: 'Delete position?',
-                                  message: `"${p.title}" in ${unit.name} will be deleted.`,
-                                  action: () => run(() => deletePosition(p.id), 'Position deleted'),
-                                })
-                              }
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+                          {!isAdviser && (
+                            <>
+                              <select
+                                className="input input-sm assign-select"
+                                value={p.member_id ?? ''}
+                                onChange={(e) => handleAssign(p, e.target.value || null)}
+                              >
+                                <MemberOptions />
+                              </select>
+                              <div className="row-actions">
+                                {m && (
+                                  <button className="icon-btn" onClick={() => handleAssign(p, null)} title="Mark vacant">
+                                    <UserMinus size={15} />
+                                  </button>
+                                )}
+                                <button className="icon-btn" onClick={() => setPositionForm({ position: p })} title="Edit">
+                                  <Pencil size={15} />
+                                </button>
+                                <button
+                                  className="icon-btn danger"
+                                  title="Delete"
+                                  onClick={() =>
+                                    setConfirm({
+                                      title: 'Delete position?',
+                                      message: `"${p.title}" in ${unit.name} will be deleted.`,
+                                      action: () => run(() => deletePosition(p.id), 'Position deleted'),
+                                    })
+                                  }
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </li>
                       )
                     })}

@@ -10,8 +10,10 @@ export function loginEmail(username) {
   if (!value) return null
   if (value.toLowerCase() === ADMIN_USERNAME) return ADMIN_EMAIL
   const memberNo = parseMemberNo(value)
-  if (!memberNo) return null
-  return `${memberCode(memberNo).toLowerCase()}@members.kislap.app`
+  if (memberNo) return `${memberCode(memberNo).toLowerCase()}@members.kislap.app`
+  const adviser = value.toLowerCase()
+  if (/^[a-z]+(?:\.[a-z]+)+$/.test(adviser)) return `${adviser}@advisers.kislap.app`
+  return null
 }
 
 export function canSeeTracker(profile, settings, isAdmin) {

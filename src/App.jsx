@@ -47,6 +47,18 @@ function RequireAdmin({ children }) {
   return children
 }
 
+function RequireOrgStaff({ children }) {
+  const { isAdmin, isAdviser } = useAuth()
+  if (!isAdmin && !isAdviser) return <Navigate to="/account" replace />
+  return children
+}
+
+function MemberRegister() {
+  const { isAdviser } = useAuth()
+  if (isAdviser) return <Navigate to="/" replace />
+  return <Register />
+}
+
 function RequireTracker({ children }) {
   const { canSeeTracker } = useAuth()
   if (!canSeeTracker) return <Navigate to="/account" replace />
@@ -104,7 +116,7 @@ export default function App() {
       >
         <Route index element={<OrgChart />} />
         <Route path="account" element={<MemberAccount />} />
-        <Route path="register" element={<Register />} />
+        <Route path="register" element={<MemberRegister />} />
         <Route
           path="registrations"
           element={
@@ -116,17 +128,17 @@ export default function App() {
         <Route
           path="members"
           element={
-            <RequireAdmin>
+            <RequireOrgStaff>
               <Members />
-            </RequireAdmin>
+            </RequireOrgStaff>
           }
         />
         <Route
           path="assign"
           element={
-            <RequireAdmin>
+            <RequireOrgStaff>
               <Assignments />
-            </RequireAdmin>
+            </RequireOrgStaff>
           }
         />
         <Route

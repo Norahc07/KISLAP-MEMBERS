@@ -5,31 +5,38 @@ import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 
 export default function Layout() {
-  const { user, profile, signOut, isAdmin, canSeeTracker, setupNeeded } = useAuth()
+  const { user, profile, signOut, isAdmin, isAdviser, canSeeTracker, setupNeeded } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
-  const nav = [
-    { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
-    ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
-    { to: '/register', label: 'Registration', icon: FileText },
-    ...(isAdmin ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
-    ...(isAdmin
-      ? [
-          { to: '/members', label: 'Members', icon: Users },
-          { to: '/assign', label: 'Assign Roles', icon: Network },
-          { to: '/users', label: 'Users', icon: IdCard },
-        ]
-      : []),
-    ...(canSeeTracker ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
-    ...(isAdmin
-      ? [
-          { to: '/settings', label: 'Settings', icon: Settings },
-          { to: '/audit', label: 'Audit log', icon: ScrollText },
-        ]
-      : []),
-  ]
+  const nav = isAdviser
+    ? [
+        { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
+        { to: '/account', label: 'My account', icon: UserRound },
+        { to: '/members', label: 'Members', icon: Users },
+        { to: '/assign', label: 'Assigned Roles', icon: Network },
+      ]
+    : [
+        { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
+        ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
+        { to: '/register', label: 'Registration', icon: FileText },
+        ...(isAdmin ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
+        ...(isAdmin
+          ? [
+              { to: '/members', label: 'Members', icon: Users },
+              { to: '/assign', label: 'Assign Roles', icon: Network },
+              { to: '/users', label: 'Users', icon: IdCard },
+            ]
+          : []),
+        ...(canSeeTracker ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
+        ...(isAdmin
+          ? [
+              { to: '/settings', label: 'Settings', icon: Settings },
+              { to: '/audit', label: 'Audit log', icon: ScrollText },
+            ]
+          : []),
+      ]
 
   function handleSignOut() {
     setSigningOut(true)

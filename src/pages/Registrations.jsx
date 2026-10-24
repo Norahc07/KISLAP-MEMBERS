@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCircle2, ClipboardList, Download, Printer, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowLeft, CheckCircle2, ClipboardList, Crop, Download, Minus, Pencil, Plus, Printer, RotateCcw, RotateCw, Search } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
@@ -7,9 +8,45 @@ import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import { fetchTracker } from '../lib/api'
 import { errorMessage } from '../lib/constants'
-import { fromRow, toPayload } from '../lib/registration'
+import {
+  AVAILABILITY,
+  COMMITTEES,
+  DISCLOSURE,
+  EDUCATION_LEVELS,
+  RELIGIONS,
+  STRANDS,
+  WORK_STATUSES,
+  ageFromDate,
+  educationVisibility,
+  fromRow,
+  isSignatureImage,
+  toPayload,
+} from '../lib/registration'
+import { cleanSignatureSource, cropSignature, rotateSignature, signatureFromFile } from '../lib/signature'
 import { TRACKER_ROLES, listedOnTracker, memberCode } from '../lib/tracker'
 import { supabase } from '../supabaseClient'
+
+const MIN_SIGN = 0.7
+const MAX_SIGN = 2.4
+const SIGN_STEP = 0.2
+
+function storedSignScale(memberNo) {
+  try {
+    const value = Number(sessionStorage.getItem(`kislap-sign-scale:${memberNo}`))
+    if (value >= MIN_SIGN && value <= MAX_SIGN) return value
+  } catch {
+    /* keep the default size when storage is blocked */
+  }
+  return 1
+}
+
+function rememberSignScale(memberNo, scale) {
+  try {
+    sessionStorage.setItem(`kislap-sign-scale:${memberNo}`, String(scale))
+  } catch {
+    /* the size still applies to this preview */
+  }
+}
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -29,6 +66,7 @@ export default function Registrations() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [previewing, setPreviewing] = useState(null)
+  const [previewForm, setPreviewForm] = useState(null)
   const [picked, setPicked] = useState(() => new Set())
   const [job, setJob] = useState(null)
 
@@ -104,6 +142,12 @@ export default function Registrations() {
     let cancel = false
     const timer = window.setTimeout(async () => {
       if (cancel) return
+      const started = Date.now()
+      while (!cancel && Date.now() - started < 2000) {
+        if (!document.querySelector('.ereg-print-target [data-sign-ready="0"]')) break
+        await new Promise((resolve) => window.setTimeout(resolve, 40))
+      }
+      if (cancel) return
       if (job.kind === 'download') {
         const selected = job.nos
           .map((memberNo) => peopleRef.current.find((person) => person.tracker.member_no === memberNo))
@@ -159,6 +203,11 @@ export default function Registrations() {
           <RegistrationReview
             person={previewPerson}
             onBack={() => setPreviewing(null)}
+            onForm={setPreviewForm}
+            onUpdated={() => {
+              load()
+              toast.success('Responses updated')
+            }}
             onPrint={() => startJob([previewPerson.tracker.member_no], 'print')}
             onDownload={() => startJob([previewPerson.tracker.member_no], 'download')}
             onSaved={() => {
@@ -168,7 +217,7 @@ export default function Registrations() {
             }}
           />
         </div>
-        <PrintCopies people={printPeople} />
+        <PrintCopies people={printPeople} previewNo={previewing} previewForm={previewForm} />
       </>
     )
   }
@@ -302,7 +351,7 @@ export default function Registrations() {
       )}
     </div>
     </div>
-    <PrintCopies people={printPeople} />
+    <PrintCopies people={printPeople} previewNo={previewing} previewForm={previewForm} />
     </>
   )
 }
@@ -367,28 +416,67 @@ function blobToDataUrl(blob) {
   })
 }
 
-function PrintCopies({ people }) {
+function PrintCopies({ people, previewNo, previewForm }) {
   if (!people.length) return null
   return (
     <div className="ereg-print-target">
       {people.map((person) => (
-        <RegistrationPrint key={person.tracker.member_no} form={fromRow(person.registration)} />
+        <RegistrationPrint
+          key={person.tracker.member_no}
+          form={person.tracker.member_no === previewNo && previewForm ? previewForm : fromRow(person.registration)}
+          signatureScale={storedSignScale(person.tracker.member_no)}
+        />
       ))}
     </div>
   )
 }
 
-function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved }) {
+function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onForm, onUpdated }) {
   const [confirmed, setConfirmed] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(() => (person?.registration ? fromRow(person.registration) : null))
+  const [snapshot, setSnapshot] = useState(null)
+  const [scale, setScale] = useState(() => storedSignScale(person?.tracker?.member_no))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [savedNote, setSavedNote] = useState('')
+
+  const registration = person?.registration
+  const memberNo = person?.tracker?.member_no
 
   useEffect(() => {
     setConfirmed(false)
-    setForm(person?.registration ? fromRow(person.registration) : null)
+    setEditing(false)
+    setSnapshot(null)
+    setSavedNote('')
     setError('')
-  }, [person])
+    setScale(storedSignScale(memberNo))
+    if (!registration) {
+      setForm(null)
+      return undefined
+    }
+    const base = fromRow(registration)
+    setForm(base)
+    let live = true
+    Promise.all([
+      cleanSignatureSource(base.applicantSignature),
+      cleanSignatureSource(base.guardianSignature),
+    ]).then(([applicant, guardian]) => {
+      if (!live) return
+      setForm((current) => (
+        current && current.memberNo === base.memberNo
+          ? { ...current, applicantSignature: applicant || current.applicantSignature, guardianSignature: guardian || current.guardianSignature }
+          : current
+      ))
+    })
+    return () => {
+      live = false
+    }
+  }, [registration, memberNo])
+
+  useEffect(() => {
+    onForm?.(form)
+  }, [form, onForm])
 
   if (!person?.registration || !form) {
     return (
@@ -401,6 +489,45 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved }) {
 
   function setField(key) {
     return (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
+  }
+
+  function resizeSignature(direction) {
+    setScale((current) => {
+      const next = Math.round((current + direction * SIGN_STEP) * 100) / 100
+      const clamped = Math.min(MAX_SIGN, Math.max(MIN_SIGN, next))
+      rememberSignScale(person.tracker.member_no, clamped)
+      return clamped
+    })
+  }
+
+  function beginEdit() {
+    setSnapshot(form)
+    setSavedNote('')
+    setError('')
+    setEditing(true)
+  }
+
+  function cancelEdit() {
+    if (snapshot) setForm(snapshot)
+    setEditing(false)
+    setError('')
+  }
+
+  async function saveResponses() {
+    setSaving(true)
+    setError('')
+    const { error: saveError } = await supabase.rpc('submit_registration', { payload: toPayload(form) })
+    setSaving(false)
+    if (saveError) {
+      setError(saveError.code === 'PGRST202'
+        ? 'The registration form is not set up in Supabase yet. Run supabase/registration-form.sql.'
+        : errorMessage(saveError))
+      return
+    }
+    setEditing(false)
+    setSnapshot(null)
+    setSavedNote('Responses updated. Confirm the form when it looks right.')
+    onUpdated?.()
   }
 
   async function saveReview() {
@@ -442,6 +569,9 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved }) {
           <button type="button" className="btn btn-soft" onClick={onPrint}>
             <Printer size={16} /> Print
           </button>
+          <Link className="btn btn-soft" to={`/register?member=${person.tracker.member_no}`}>
+            <Pencil size={16} /> Full form
+          </Link>
           <button type="button" className="btn btn-primary" onClick={onDownload}>
             <Download size={16} /> Download
           </button>
@@ -449,23 +579,360 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved }) {
         </div>
       </div>
 
-      <RegistrationPrint form={form} preview />
+      <RegistrationPrint form={form} preview signatureScale={scale} />
+
+      {!confirmed && editing && (
+        <ResponseEditor form={form} setForm={setForm} saving={saving} error={error} onSave={saveResponses} onCancel={cancelEdit} />
+      )}
 
       {!confirmed ? (
         <section className="reg-confirm">
+          <div className="sign-size">
+            <span>Signature size</span>
+            <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(-1)} disabled={scale <= MIN_SIGN} aria-label="Decrease signature size">
+              <Minus size={16} /> Smaller
+            </button>
+            <strong>{Math.round(scale * 100)}%</strong>
+            <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(1)} disabled={scale >= MAX_SIGN} aria-label="Increase signature size">
+              <Plus size={16} /> Larger
+            </button>
+          </div>
           <div>
             <strong>Confirm this registration</strong>
-            <p className="muted">Check the form above. Organization review opens after you confirm it.</p>
+            <p className="muted">
+              {savedNote || 'Check the form above. You can update the answers before organization review opens.'}
+            </p>
           </div>
-          <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
-            <CheckCircle2 size={16} /> Confirm and review
-          </button>
+          <div className="ereg-actions">
+            {editing ? (
+              <button type="button" className="btn btn-ghost" onClick={cancelEdit}>Cancel editing</button>
+            ) : (
+              <button type="button" className="btn btn-soft" onClick={beginEdit}>
+                <Pencil size={16} /> Edit responses
+              </button>
+            )}
+            {!editing && (
+              <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
+                <CheckCircle2 size={16} /> Confirm and review
+              </button>
+            )}
+          </div>
         </section>
       ) : (
         <OrganizationReview form={form} setField={setField} setForm={setForm} saving={saving} error={error} onSave={saveReview} />
       )}
     </div>
   )
+}
+
+function ResponseEditor({ form, setForm, saving, error, onSave, onCancel }) {
+  const schools = educationVisibility(form.educationLevel, form.schoolWorkStatus)
+
+  function patch(key, value) {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  function toggle(key, value) {
+    setForm((current) => {
+      const list = current[key] || []
+      return {
+        ...current,
+        [key]: list.includes(value) ? list.filter((item) => item !== value) : [...list, value],
+      }
+    })
+  }
+
+  return (
+    <section className="response-editor">
+      <div>
+        <h2>Edit submitted responses</h2>
+        <p className="muted">These answers update the form above. Organization review stays as it is until you confirm.</p>
+      </div>
+      <h3>Personal information</h3>
+      <div className="response-grid">
+        <Text label="Surname" value={form.surname} onChange={(value) => patch('surname', value)} />
+        <Text label="First name" value={form.firstName} onChange={(value) => patch('firstName', value)} />
+        <Text label="Middle name" value={form.middleName} onChange={(value) => patch('middleName', value)} />
+        <Text label="Suffix" value={form.suffix} onChange={(value) => patch('suffix', value)} />
+        <Select label="Sex" value={form.sex} onChange={(value) => patch('sex', value)} options={[['male', 'Male'], ['female', 'Female']]} />
+        <Text label="Age" value={form.age} onChange={(value) => patch('age', value)} />
+        <DateField label="Date of birth" value={form.dateOfBirth} onChange={(iso) => setForm((current) => ({ ...current, dateOfBirth: iso, age: ageFromDate(iso) || current.age }))} />
+        <Select label="Civil status" value={form.civilStatus} onChange={(value) => patch('civilStatus', value)} options={[['single', 'Single'], ['married', 'Married'], ['other', 'Other']]} />
+        <Text label="Permanent address" wide value={form.address} onChange={(value) => patch('address', value)} />
+        <Text label="Barangay" value={form.barangay} onChange={(value) => patch('barangay', value)} />
+        <Text label="City / municipality" value={form.city} onChange={(value) => patch('city', value)} />
+        <Text label="Province" value={form.province} onChange={(value) => patch('province', value)} />
+        <Text label="Contact number" value={form.contactNumber} onChange={(value) => patch('contactNumber', value)} />
+        <Text label="Email address" wide value={form.email} onChange={(value) => patch('email', value)} />
+        <Text label="Facebook name" wide value={form.facebookName} onChange={(value) => patch('facebookName', value)} />
+      </div>
+      <h3>Parents and additional information</h3>
+      <div className="response-grid">
+        <Text label="Father's name" value={form.fatherName} onChange={(value) => patch('fatherName', value)} />
+        <Text label="Mother's name" value={form.motherName} onChange={(value) => patch('motherName', value)} />
+        <Select label="Person with disability" value={form.pwd} onChange={(value) => patch('pwd', value)} options={DISCLOSURE} />
+        <Select label="Registered voter" value={form.registeredVoter} onChange={(value) => patch('registeredVoter', value)} options={DISCLOSURE} />
+        <Select label="Religion" value={form.religion} onChange={(value) => patch('religion', value)} options={RELIGIONS} />
+        {form.religion === 'Other' && <Text label="Other religion" value={form.religionOther} onChange={(value) => patch('religionOther', value)} />}
+        <Text label="Skills, talents, and expertise" wide value={form.skills} onChange={(value) => patch('skills', value)} />
+      </div>
+      <h3>Education</h3>
+      <div className="response-grid">
+        <Select label="Highest attainment" value={form.educationLevel} onChange={(value) => patch('educationLevel', value)} options={EDUCATION_LEVELS} />
+        <Select label="School / work status" value={form.schoolWorkStatus} onChange={(value) => patch('schoolWorkStatus', value)} options={WORK_STATUSES} />
+        {schools.elementary && <Text label="Elementary school" value={form.elementarySchool} onChange={(value) => patch('elementarySchool', value)} />}
+        {schools.highSchool && <Text label="Secondary school" value={form.highSchool} onChange={(value) => patch('highSchool', value)} />}
+        {schools.strand && <Select label="Strand (SHS)" value={form.strand} onChange={(value) => patch('strand', value)} options={STRANDS} />}
+        {schools.strand && form.strand === 'Other' && <Text label="Other strand" value={form.strandOther} onChange={(value) => patch('strandOther', value)} />}
+        {schools.college && <Text label="College school" value={form.collegeSchool} onChange={(value) => patch('collegeSchool', value)} />}
+        {schools.course && <Text label="College course / major" value={form.course} onChange={(value) => patch('course', value)} />}
+        {(schools.vocational || schools.other) && <Text label={schools.other ? 'School name' : 'Vocational / technical school'} value={form.schoolName} onChange={(value) => patch('schoolName', value)} />}
+        {schools.grade && <Text label="Current grade level or year" value={form.gradeLevel} onChange={(value) => patch('gradeLevel', value)} />}
+      </div>
+      <h3>Emergency guardian</h3>
+      <div className="response-grid">
+        <Text label="Guardian name" value={form.guardianName} onChange={(value) => patch('guardianName', value)} />
+        <Text label="Contact number" value={form.guardianContact} onChange={(value) => patch('guardianContact', value)} />
+        <Text label="Relationship" value={form.guardianRelationship} onChange={(value) => patch('guardianRelationship', value)} />
+        <Text label="Alternative contact" value={form.altContactName} onChange={(value) => patch('altContactName', value)} />
+        <Text label="Alternative number" value={form.altContactNumber} onChange={(value) => patch('altContactNumber', value)} />
+      </div>
+      <h3>Volunteer interests</h3>
+      <Checks label="Areas" options={COMMITTEES.map((name) => [name, name])} value={form.interests} onToggle={(value) => toggle('interests', value)} />
+      <div className="response-grid">
+        <Text label="Preferred committee" value={form.preferredCommittee} onChange={(value) => patch('preferredCommittee', value)} />
+        <Text label="Other interests" value={form.otherInterests} onChange={(value) => patch('otherInterests', value)} />
+      </div>
+      <Checks label="Availability" options={AVAILABILITY} value={form.availability} onToggle={(value) => toggle('availability', value)} />
+      <h3>Consent and signatures</h3>
+      <div className="response-grid">
+        <Select label="Formal picture" value={form.photoStatus} onChange={(value) => patch('photoStatus', value)} options={[['submitted', 'Submitted'], ['pending', 'Pending']]} />
+        <Text label="Applicant printed name" value={form.applicantPrintedName} onChange={(value) => patch('applicantPrintedName', value)} />
+        <DateField label="Date signed" value={form.dateSigned} onChange={(iso) => patch('dateSigned', iso)} />
+        <DateField label="Guardian date" value={form.guardianSignedDate} onChange={(iso) => patch('guardianSignedDate', iso)} />
+        <SignatureReplace label="Applicant e-signature" value={form.applicantSignature} onChange={(value) => patch('applicantSignature', value)} />
+        <SignatureReplace label="Guardian e-signature" value={form.guardianSignature} onChange={(value) => patch('guardianSignature', value)} />
+      </div>
+      <Checks
+        label="Consent"
+        options={[
+          ['certified', 'Applicant declaration agreed'],
+          ['privacyConsent', 'Privacy consent'],
+          ['announcementsConsent', 'Announcements'],
+          ['photoPublicConsent', 'Public photo consent'],
+        ]}
+        value={['certified', 'privacyConsent', 'announcementsConsent', 'photoPublicConsent'].filter((key) => form[key])}
+        onToggle={(key) => patch(key, !form[key])}
+      />
+      {error && <div className="alert">{error}</div>}
+      <div className="register-actions">
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
+          {saving ? 'Saving…' : 'Save responses'}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function Text({ label, value, onChange, wide = false }) {
+  return (
+    <label className={`field ${wide ? 'wide' : ''}`}>
+      <span>{label}</span>
+      <input className="input" value={value || ''} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  )
+}
+
+function Select({ label, value, onChange, options }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select className="input" value={value || ''} onChange={(event) => onChange(event.target.value)}>
+        <option value="">Select</option>
+        {options.map(([option, text]) => <option key={option} value={option}>{text}</option>)}
+      </select>
+    </label>
+  )
+}
+
+function Checks({ label, options, value, onToggle }) {
+  return (
+    <fieldset className="choice-set">
+      <legend>{label}</legend>
+      <div className="choice-grid">
+        {options.map(([option, text]) => (
+          <label key={option} className="check">
+            <input type="checkbox" checked={value.includes(option)} onChange={() => onToggle(option)} />
+            <span>{text}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function SignatureReplace({ label, value, onChange }) {
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [cropping, setCropping] = useState(false)
+  const [box, setBox] = useState({ x: 0.06, y: 0.08, w: 0.88, h: 0.84 })
+  const stageRef = useRef(null)
+  const dragRef = useRef(null)
+  const image = isSignatureImage(value)
+
+  async function run(task) {
+    setBusy(true)
+    setError('')
+    try {
+      onChange(await task())
+    } catch (err) {
+      setError(err.message || 'The signature could not be changed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onFile(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setCropping(false)
+    await run(() => signatureFromFile(file))
+  }
+
+  function pointOf(event) {
+    const rect = stageRef.current.getBoundingClientRect()
+    return {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+      rect,
+    }
+  }
+
+  function onPointerDown(event) {
+    if (!cropping || !stageRef.current) return
+    const point = pointOf(event)
+    const edgeX = 14 / point.rect.width
+    const edgeY = 14 / point.rect.height
+    const inside = point.x >= box.x && point.y >= box.y && point.x <= box.x + box.w && point.y <= box.y + box.h
+    let handle = 'new'
+    if (inside) {
+      const north = point.y <= box.y + edgeY
+      const south = point.y >= box.y + box.h - edgeY
+      const west = point.x <= box.x + edgeX
+      const east = point.x >= box.x + box.w - edgeX
+      handle = `${north ? 'n' : south ? 's' : ''}${west ? 'w' : east ? 'e' : ''}` || 'move'
+    }
+    dragRef.current = { handle, x: point.x, y: point.y, box: { ...box } }
+    if (handle === 'new') setBox({ x: point.x, y: point.y, w: 0.08, h: 0.08 })
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      /* dragging still follows the pointer without capture */
+    }
+  }
+
+  function onPointerMove(event) {
+    const drag = dragRef.current
+    if (!drag) return
+    const point = pointOf(event)
+    const dx = point.x - drag.x
+    const dy = point.y - drag.y
+    const start = drag.box
+    let next = { ...start }
+    if (drag.handle === 'move') {
+      next.x = start.x + dx
+      next.y = start.y + dy
+    } else if (drag.handle === 'new') {
+      next = { x: drag.x, y: drag.y, w: point.x - drag.x, h: point.y - drag.y }
+    } else {
+      if (drag.handle.includes('w')) {
+        next.x = start.x + dx
+        next.w = start.w - dx
+      }
+      if (drag.handle.includes('e')) next.w = start.w + dx
+      if (drag.handle.includes('n')) {
+        next.y = start.y + dy
+        next.h = start.h - dy
+      }
+      if (drag.handle.includes('s')) next.h = start.h + dy
+    }
+    setBox(fitCrop(next))
+  }
+
+  function onPointerUp() {
+    dragRef.current = null
+  }
+
+  return (
+    <div className="field sign-adjust">
+      <span>{label}</span>
+      {image && (
+        <div
+          className={`sign-stage ${cropping ? 'is-cropping' : ''}`}
+          ref={stageRef}
+          role="application"
+          aria-label={`${label} crop`}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+        >
+          <img src={value} alt="" draggable="false" />
+          {cropping && (
+            <div
+              className="sign-crop"
+              style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }}
+            />
+          )}
+        </div>
+      )}
+      {image && (
+        <div className="sign-tools">
+          <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, -1))}>
+            <RotateCcw size={16} /> Rotate left
+          </button>
+          <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, 1))}>
+            <RotateCw size={16} /> Rotate right
+          </button>
+          {cropping ? (
+            <>
+              <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => run(async () => { const next = await cropSignature(value, box); setCropping(false); return next })}>
+                Apply crop
+              </button>
+              <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setCropping(false)}>Cancel crop</button>
+            </>
+          ) : (
+            <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => { setBox({ x: 0.06, y: 0.08, w: 0.88, h: 0.84 }); setCropping(true) }}>
+              <Crop size={16} /> Crop
+            </button>
+          )}
+        </div>
+      )}
+      <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} disabled={busy} />
+      <small className="muted">
+        {busy ? 'Updating the signature…' : cropping ? 'Drag the box to keep the ink, then apply the crop.' : 'Upload a replacement, or rotate and crop the signature above. Save responses to keep it.'}
+      </small>
+      {error && <div className="alert">{error}</div>}
+    </div>
+  )
+}
+
+function fitCrop(box) {
+  let { x, y, w, h } = box
+  if (w < 0) {
+    x += w
+    w = -w
+  }
+  if (h < 0) {
+    y += h
+    h = -h
+  }
+  w = Math.max(0.08, Math.min(1, w))
+  h = Math.max(0.08, Math.min(1, h))
+  x = Math.min(Math.max(0, x), 1 - w)
+  y = Math.min(Math.max(0, y), 1 - h)
+  return { x, y, w, h }
 }
 
 function OrganizationReview({ form, setField, setForm, saving, error, onSave }) {

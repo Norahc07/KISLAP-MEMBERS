@@ -52,7 +52,7 @@ export default function Login() {
         <Logo size={120} />
         <div>
           <h1>KISLAP Youth Volunteers</h1>
-          <p className="muted">Sign in with your membership ID. The admin username is admin.</p>
+          <p className="muted">Members sign in with their membership ID. Advisers sign in with their adviser username. The admin username is admin.</p>
         </div>
 
         <label className="field">

@@ -83,15 +83,17 @@ export default function Account() {
             )}
             <div>
               <dt>Role</dt>
-              <dd>{profile?.role || 'member'}</dd>
+              <dd>{profile?.role === 'adviser' ? 'Adviser' : profile?.role || 'member'}</dd>
             </div>
           </dl>
-          <div className="account-actions">
-            <Link to="/register" className="btn btn-primary">
-              Open my registration
-            </Link>
-            <p>The e-registration form opens here after an officer verifies it.</p>
-          </div>
+          {profile?.role !== 'adviser' && (
+            <div className="account-actions">
+              <Link to="/register" className="btn btn-primary">
+                Open my registration
+              </Link>
+              <p>Open a submitted or approved form to review it and correct any details.</p>
+            </div>
+          )}
         </div>
       </section>
 
