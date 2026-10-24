@@ -3045,6 +3045,16 @@ select.input {
   line-height: 1.45;
 }
 
+.account-notice-warn {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.register-official .account-notice {
+  margin: 0 0 16px;
+}
+
 .account-card {
   display: flex;
   align-items: center;

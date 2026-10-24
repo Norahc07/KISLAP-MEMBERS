@@ -98,7 +98,10 @@ export default function Register() {
     if (existing.data) {
       setForm(fromRow(existing.data))
       setSavedStatus(existing.data.application_status || 'pending')
-      if (!isAdmin) setGate(existing.data.application_status === 'approved' ? 'verified' : 'pending')
+      if (!isAdmin) {
+        const status = existing.data.application_status
+        setGate(status === 'approved' ? 'verified' : status === 'declined' ? 'declined' : 'pending')
+      }
     } else {
       setForm({ ...emptyRegistration(), memberNo: String(memberNo) })
       setSavedStatus('')
@@ -243,6 +246,44 @@ export default function Register() {
     )
   }
 
+  if (!isAdmin && !editing && gate === 'declined') {
+    return (
+      <RegisterShell form={form} lookup={lookup}>
+        <section className="register-official">
+          <header className="register-official-bar">
+            <div>
+              <p className="eyebrow">Declined</p>
+              <h1>Your registration was not approved</h1>
+              <p>Read the remark below, correct the form, and submit a new registration.</p>
+            </div>
+            <div className="register-nav">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditing(true)
+                  setStepIndex(0)
+                  setMissing([])
+                  setSubmitError('')
+                }}
+              >
+                <Pencil size={16} /> Submit a new registration
+              </button>
+              <Link to="/account" className="btn btn-ghost">
+                Back to my account
+              </Link>
+            </div>
+          </header>
+          <div className="account-notice" role="status">
+            <strong>Why it was declined</strong>
+            <span>{form.remarks.trim() || 'An officer declined this registration. Submit a new one after you correct it.'}</span>
+          </div>
+          <RegistrationPrint form={form} lookup={lookup} preview />
+        </section>
+      </RegisterShell>
+    )
+  }
+
   if (!isAdmin && !editing && (gate === 'pending' || gate === 'verified')) {
     const approved = gate === 'verified'
     return (
@@ -250,12 +291,12 @@ export default function Register() {
         <section className="register-official">
           <header className="register-official-bar">
             <div>
-              <p className="eyebrow">{approved ? 'Approved' : 'Submitted'}</p>
+              <p className="eyebrow">{approved ? 'Approved' : 'On hold'}</p>
               <h1>Your registration form</h1>
               <p>
                 {approved
                   ? 'This registration is approved. Review the form below and update any missing or incorrect details.'
-                  : 'This registration is submitted. Review the form below and update any missing or incorrect details.'}
+                  : 'This registration is on hold. An officer is still reviewing it. You can update any missing or incorrect details.'}
               </p>
             </div>
             <div className="register-nav">

@@ -51,7 +51,7 @@ function rememberSignScale(memberNo, scale) {
 const FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'approved', label: 'Approved' },
-  { key: 'submitted', label: 'Submitted' },
+  { key: 'submitted', label: 'On hold' },
   { key: 'missing', label: 'Not yet' },
 ]
 
@@ -531,9 +531,29 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onFo
   }
 
   async function saveReview() {
+    const status = form.applicationStatus
+    if (!status) {
+      setError('Select an application status.')
+      return
+    }
+    if (status === 'approved' && form.interviewAssessment !== 'recommended') {
+      setError('This is saved as approved only when the interview assessment is Recommended.')
+      return
+    }
+    if (status === 'declined' && !form.remarks.trim()) {
+      setError('Write a remark the member can read, explaining why this registration was declined.')
+      return
+    }
+    const approved = status === 'approved'
+    const review = {
+      ...form,
+      applicationStatus: approved ? 'approved' : status,
+      remarks: status === 'declined' ? form.remarks.trim() : '',
+      approvalDate: approved ? todayIso() : '',
+    }
     setSaving(true)
     setError('')
-    const { error: saveError } = await supabase.rpc('submit_registration', { payload: toPayload(form) })
+    const { error: saveError } = await supabase.rpc('submit_registration', { payload: toPayload(review) })
     setSaving(false)
     if (saveError) {
       setError(
@@ -548,7 +568,7 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onFo
       p_summary: `Reviewed the registration for ${memberCode(person.tracker.member_no)}`,
       p_detail: {
         member_no: person.tracker.member_no,
-        application_status: form.applicationStatus || null,
+        application_status: review.applicationStatus,
         assigned_position: form.assignedPosition,
       },
     }).then(() => {}, () => {})
@@ -945,12 +965,12 @@ function OrganizationReview({ form, setField, setForm, saving, error, onSave }) 
   return (
     <section className="reg-org">
       <h2>Organization review</h2>
-      <p className="muted">Set the application status to Approved to let the member open the e-registration form.</p>
+      <p className="muted">Approved is saved only when the interview assessment is Recommended. Pending keeps the form on hold. Declined needs a remark the member can read before submitting again.</p>
       <div className="field-row">
         <DateField label="Date received" value={form.dateReceived} onChange={(iso) => setForm((current) => ({ ...current, dateReceived: iso }))} />
         <DateField label="Interview date" value={form.interviewDate} onChange={(iso) => setForm((current) => ({ ...current, interviewDate: iso }))} />
       </div>
-      <Choice label="Application status" value={form.applicationStatus} onChange={setField('applicationStatus')} options={[['pending', 'Pending'], ['approved', 'Approved'], ['declined', 'Declined']]} />
+      <Choice label="Application status" value={form.applicationStatus} onChange={setField('applicationStatus')} options={[['pending', 'Pending — on hold'], ['approved', 'Approved'], ['declined', 'Declined']]} />
       <Choice label="Interview assessment" value={form.interviewAssessment} onChange={setField('interviewAssessment')} options={[['recommended', 'Recommended'], ['review', 'For further review'], ['not_recommended', 'Not recommended']]} />
       <label className="field">
         <span>Assigned position</span>
@@ -971,13 +991,17 @@ function OrganizationReview({ form, setField, setForm, saving, error, onSave }) 
           })}
         </select>
       </label>
-      <div className="field-row">
+      <label className="field">
+        <span>Reviewed by</span>
+        <input className="input" value={form.reviewedBy} onChange={setField('reviewedBy')} placeholder="Officer name" />
+      </label>
+      {form.applicationStatus === 'declined' && (
         <label className="field">
-          <span>Reviewed by</span>
-          <input className="input" value={form.reviewedBy} onChange={setField('reviewedBy')} placeholder="Officer name" />
+          <span>Remarks for the member</span>
+          <textarea className="input textarea" rows={4} value={form.remarks} onChange={setField('remarks')} placeholder="Explain why this registration was declined" />
+          <small className="muted">The member sees this on their account and can submit a new registration.</small>
         </label>
-        <DateField label="Approval date" value={form.approvalDate} onChange={(iso) => setForm((current) => ({ ...current, approvalDate: iso }))} />
-      </div>
+      )}
       {error && <div className="alert">{error}</div>}
       <div className="register-actions">
         <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
@@ -1008,7 +1032,14 @@ function statusOf(registration) {
   if (!registration) return { key: 'muted', label: 'Not yet' }
   if (registration.application_status === 'approved') return { key: 'approved', label: 'Approved' }
   if (registration.application_status === 'declined') return { key: 'declined', label: 'Declined' }
-  return { key: 'submitted', label: 'Submitted' }
+  return { key: 'submitted', label: 'On hold' }
+}
+
+function todayIso() {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${now.getFullYear()}-${month}-${day}`
 }
 
 function positionOf(row, rolesByMember) {

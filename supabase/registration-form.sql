@@ -1,7 +1,7 @@
 -- Membership registration form.
 -- Run once in Supabase → SQL Editor after membership-tracker.sql.
 -- Safe to run again. Saved answers and tracker checkboxes are kept.
--- A member can update their own submitted or approved form. Approval status stays as it is.
+-- A member can update their own form. Approval stays as it is, except a declined form returns to pending when they submit again.
 
 create table if not exists public.registrations (
   member_no              int primary key references public.membership_tracker(member_no) on delete cascade,
@@ -303,12 +303,28 @@ begin
     privacy_date = excluded.privacy_date,
     date_received = case when public.is_admin() then excluded.date_received else registrations.date_received end,
     interview_date = case when public.is_admin() then excluded.interview_date else registrations.interview_date end,
-    application_status = case when public.is_admin() then excluded.application_status else registrations.application_status end,
-    interview_assessment = case when public.is_admin() then excluded.interview_assessment else registrations.interview_assessment end,
+    application_status = case
+      when public.is_admin() then excluded.application_status
+      when registrations.application_status = 'declined' then 'pending'
+      else registrations.application_status
+    end,
+    interview_assessment = case
+      when public.is_admin() then excluded.interview_assessment
+      when registrations.application_status = 'declined' then null
+      else registrations.interview_assessment
+    end,
     assigned_position = case when public.is_admin() then excluded.assigned_position else registrations.assigned_position end,
-    remarks = case when public.is_admin() then excluded.remarks else registrations.remarks end,
+    remarks = case
+      when public.is_admin() then excluded.remarks
+      when registrations.application_status = 'declined' then ''
+      else registrations.remarks
+    end,
     reviewed_by = case when public.is_admin() then excluded.reviewed_by else registrations.reviewed_by end,
-    approval_date = case when public.is_admin() then excluded.approval_date else registrations.approval_date end,
+    approval_date = case
+      when public.is_admin() then excluded.approval_date
+      when registrations.application_status = 'declined' then null
+      else registrations.approval_date
+    end,
     updated_at = now();
 
   v_name := upper(btrim(concat_ws(

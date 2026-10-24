@@ -15,6 +15,7 @@ export default function Account() {
   const [uploading, setUploading] = useState(false)
   const [memberPhoto, setMemberPhoto] = useState('')
   const [readyForInterview, setReadyForInterview] = useState(false)
+  const [registration, setRegistration] = useState(null)
   const code = profile?.member_no ? memberCode(profile.member_no) : ''
   const photo = profile?.photo_url || memberPhoto
 
@@ -22,6 +23,7 @@ export default function Account() {
     if (!profile?.member_no) {
       setMemberPhoto('')
       setReadyForInterview(false)
+      setRegistration(null)
       return undefined
     }
     let ignore = false
@@ -34,6 +36,14 @@ export default function Account() {
         if (ignore) return
         if (!profile.photo_url) setMemberPhoto(data?.members?.photo_url || '')
         setReadyForInterview(Boolean(data?.registration_form) && !data?.interview)
+      })
+    supabase
+      .from('registrations')
+      .select('application_status, remarks')
+      .eq('member_no', profile.member_no)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!ignore) setRegistration(data || null)
       })
     return () => {
       ignore = true
@@ -58,10 +68,22 @@ export default function Account() {
 
   return (
     <div className="page account-page">
-      {readyForInterview && (
+      {registration?.application_status === 'declined' && (
+        <div className="account-notice account-notice-warn" role="status">
+          <strong>Your registration was not approved.</strong>
+          <span>{registration.remarks?.trim() || 'An officer declined this registration.'} You can submit a new one.</span>
+        </div>
+      )}
+      {registration?.application_status === 'pending' && (
+        <div className="account-notice" role="status">
+          <strong>Your registration is on hold.</strong>
+          <span>An officer is still reviewing the form.</span>
+        </div>
+      )}
+      {registration?.application_status === 'approved' && readyForInterview && (
         <div className="account-notice" role="status">
           <strong>You are ready for interview.</strong>
-          <span>Your registration is submitted. An officer will schedule the interview.</span>
+          <span>Your registration is approved. An officer will schedule the interview.</span>
         </div>
       )}
       <section className="account-card">
@@ -91,7 +113,11 @@ export default function Account() {
               <Link to="/register" className="btn btn-primary">
                 Open my registration
               </Link>
-              <p>Open a submitted or approved form to review it and correct any details.</p>
+              <p>
+                {registration?.application_status === 'declined'
+                  ? 'Open the form to read why it was declined and submit a new registration.'
+                  : 'Open a form that is on hold or approved to review it and correct any details.'}
+              </p>
             </div>
           )}
         </div>

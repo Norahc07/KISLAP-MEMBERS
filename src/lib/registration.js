@@ -391,7 +391,7 @@ export function toPayload(form) {
     application_status: form.applicationStatus || null,
     interview_assessment: form.interviewAssessment || null,
     assigned_position: form.assignedPosition.trim(),
-    remarks: '',
+    remarks: form.remarks.trim(),
     reviewed_by: form.reviewedBy.trim(),
     approval_date: form.approvalDate || null,
   }
