@@ -2,6 +2,7 @@
 -- Run once in Supabase → SQL Editor after membership-tracker.sql.
 -- Safe to run again. Saved answers and tracker checkboxes are kept.
 -- A member can update their own form. Approval stays as it is, except a declined form returns to pending when they submit again.
+-- Tracker Registration is marked only after an admin approves the form. Other tracker boxes stay officer-managed.
 
 create table if not exists public.registrations (
   member_no              int primary key references public.membership_tracker(member_no) on delete cascade,
@@ -337,7 +338,12 @@ begin
 
   update public.membership_tracker
   set
-    registration_form = true,
+    registration_form = exists (
+      select 1
+      from public.registrations r
+      where r.member_no = n
+        and r.application_status = 'approved'
+    ),
     full_name = case when btrim(full_name) = '' then v_name else full_name end
   where member_no = n;
 
