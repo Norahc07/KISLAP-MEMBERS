@@ -14,6 +14,7 @@ import {
   COMMITTEES,
   DISCLOSURE,
   EDUCATION_LEVELS,
+  YES_NO,
   RELIGIONS,
   STRANDS,
   WORK_STATUSES,
@@ -477,6 +478,10 @@ function PersonalStep({ form, setForm, setField, setBirthDate }) {
     setForm((current) => ({ ...current, civilStatus: current.civilStatus === value ? '' : value }))
   }
 
+  function setRegisteredVoter(value) {
+    setForm((current) => ({ ...current, registeredVoter: current.registeredVoter === value ? '' : value }))
+  }
+
   return (
     <div className="form">
       <p className="muted">Please provide accurate and complete information.</p>
@@ -527,6 +532,12 @@ function PersonalStep({ form, setForm, setField, setBirthDate }) {
           ['married', 'Married'],
           ['other', 'Other'],
         ]}
+      />
+      <CheckGroup
+        label="Registered voter"
+        value={form.registeredVoter}
+        onChange={setRegisteredVoter}
+        options={YES_NO}
       />
       <TextField label="Permanent address" hint="House no., street, sitio, or purok" value={form.address} onChange={setField('address')} required placeholder="123 Rizal Street, Purok 1" />
       <div className="field-row">
@@ -660,7 +671,6 @@ function AdditionalStep({ form, setField, setForm }) {
     <div className="form">
       <p className="muted">These questions are optional. Share only what you are comfortable sharing.</p>
       <Choice label="Person with disability (PWD)" hint="Optional. Disclose only if comfortable." value={form.pwd} onChange={setField('pwd')} options={DISCLOSURE} />
-      <Choice label="Registered voter" hint="For voluntary demographic information." value={form.registeredVoter} onChange={setField('registeredVoter')} options={DISCLOSURE} />
       <SelectField
         label="Religion"
         value={form.religion}
@@ -681,7 +691,7 @@ function AdditionalStep({ form, setField, setForm }) {
           placeholder="Examples: graphic design, documentation, public speaking, event management, first aid, sports, teaching, photography, or technical skills."
         />
       </label>
-      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((current) => ({ ...current, pwd: '', registeredVoter: '', religion: '', religionOther: '', skills: '' }))}>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((current) => ({ ...current, pwd: '', religion: '', religionOther: '', skills: '' }))}>
         Clear this section
       </button>
     </div>

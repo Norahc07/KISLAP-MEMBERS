@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
+import RegisteredVoterPrompt from './RegisteredVoterPrompt'
 
 export default function Layout() {
   const { user, profile, signOut, isAdmin, isAdviser, canSeeTracker, setupNeeded } = useAuth()
@@ -99,6 +100,7 @@ export default function Layout() {
           </div>
         )}
         <Outlet />
+        <RegisteredVoterPrompt />
       </main>
     </div>
   )

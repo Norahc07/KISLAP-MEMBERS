@@ -45,6 +45,11 @@ export const DISCLOSURE = [
   ['prefer_not', 'Prefer not to say'],
 ]
 
+export const YES_NO = [
+  ['yes', 'Yes'],
+  ['no', 'No'],
+]
+
 export const RELIGIONS = [
   'Agnostic',
   'Animism',
@@ -277,6 +282,7 @@ export function validateStep(stepId, form, lookup) {
     need(isValidDate(form.dateOfBirth) && form.dateOfBirth <= todayIso(), 'Date of birth')
     need(Number(form.age) >= 1 && Number(form.age) <= 120, 'Age')
     need(form.civilStatus, 'Civil status')
+    need(form.registeredVoter === 'yes' || form.registeredVoter === 'no', 'Registered voter')
     need(form.address.trim(), 'Permanent address')
     need(form.barangay.trim(), 'Barangay')
     need(form.city.trim(), 'City / municipality')

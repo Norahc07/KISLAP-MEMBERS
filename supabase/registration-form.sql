@@ -68,7 +68,8 @@ alter table public.registrations
   add column if not exists elementary_school text not null default '',
   add column if not exists high_school text not null default '',
   add column if not exists college_school text not null default '',
-  add column if not exists strand text not null default '';
+  add column if not exists strand text not null default '',
+  add column if not exists registered_voter text;
 
 alter table public.registrations enable row level security;
 
@@ -371,3 +372,51 @@ $$;
 
 revoke all on function public.submit_registration(jsonb) from public, anon, authenticated;
 grant execute on function public.submit_registration(jsonb) to anon, authenticated;
+
+-- One-time update for approved registrations that still need a Registered voter answer.
+create or replace function public.save_registered_voter(p_value text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n int;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in to update your registration.';
+  end if;
+
+  if coalesce(p_value, '') not in ('yes', 'no') then
+    raise exception 'Choose Yes or No.';
+  end if;
+
+  select member_no into n
+  from public.profiles
+  where id = auth.uid();
+
+  if n is null then
+    raise exception 'Your membership ID is not linked to this account.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.registrations
+    where member_no = n
+      and application_status = 'approved'
+      and registered_voter is null
+  ) then
+    raise exception 'This update is only for approved registrations that still need a registered voter answer.';
+  end if;
+
+  update public.registrations
+  set registered_voter = p_value,
+      updated_at = now()
+  where member_no = n;
+
+  return jsonb_build_object('ok', true, 'member_no', n, 'registered_voter', p_value);
+end;
+$$;
+
+revoke all on function public.save_registered_voter(text) from public, anon, authenticated;
+grant execute on function public.save_registered_voter(text) to authenticated;

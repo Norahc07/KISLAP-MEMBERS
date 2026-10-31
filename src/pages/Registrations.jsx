@@ -12,6 +12,7 @@ import {
   AVAILABILITY,
   COMMITTEES,
   DISCLOSURE,
+  YES_NO,
   EDUCATION_LEVELS,
   RELIGIONS,
   STRANDS,
@@ -685,13 +686,13 @@ function ResponseEditor({ form, setForm, saving, error, onSave, onCancel }) {
         <Text label="Contact number" value={form.contactNumber} onChange={(value) => patch('contactNumber', value)} />
         <Text label="Email address" wide value={form.email} onChange={(value) => patch('email', value)} />
         <Text label="Facebook name" wide value={form.facebookName} onChange={(value) => patch('facebookName', value)} />
+        <Select label="Registered voter" value={form.registeredVoter} onChange={(value) => patch('registeredVoter', value)} options={YES_NO} />
       </div>
       <h3>Parents and additional information</h3>
       <div className="response-grid">
         <Text label="Father's name" value={form.fatherName} onChange={(value) => patch('fatherName', value)} />
         <Text label="Mother's name" value={form.motherName} onChange={(value) => patch('motherName', value)} />
         <Select label="Person with disability" value={form.pwd} onChange={(value) => patch('pwd', value)} options={DISCLOSURE} />
-        <Select label="Registered voter" value={form.registeredVoter} onChange={(value) => patch('registeredVoter', value)} options={DISCLOSURE} />
         <Select label="Religion" value={form.religion} onChange={(value) => patch('religion', value)} options={RELIGIONS} />
         {form.religion === 'Other' && <Text label="Other religion" value={form.religionOther} onChange={(value) => patch('religionOther', value)} />}
         <Text label="Skills, talents, and expertise" wide value={form.skills} onChange={(value) => patch('skills', value)} />

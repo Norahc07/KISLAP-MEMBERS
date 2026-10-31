@@ -1878,6 +1878,33 @@ select.input {
   border-radius: 0 0 20px 20px;
 }
 
+.voter-prompt {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.voter-prompt-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.voter-prompt p {
+  margin: 0;
+  line-height: 1.55;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.voter-prompt .muted {
+  font-weight: 400;
+}
+
 .confirm {
   display: flex;
   gap: 14px;

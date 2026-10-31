@@ -78,6 +78,7 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
       ['Age', form.age],
       ['Date of birth', formatDisplayDate(form.dateOfBirth), 'date'],
       ['Civil status', labelOf([['single', 'Single'], ['married', 'Married'], ['other', 'Other']], form.civilStatus)],
+      ['Registered voter', labelOf([['yes', 'Yes'], ['no', 'No']], form.registeredVoter)],
       ['Permanent address', form.address, 'wide'],
       ['Barangay', form.barangay],
       ['City / municipality', form.city],
@@ -92,7 +93,6 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
     ]],
     ['C. Additional information', [
       ['Person with disability', labelOf(DISCLOSURE, form.pwd)],
-      ['Registered voter', labelOf(DISCLOSURE, form.registeredVoter)],
       ['Religion', form.religion === 'Other' ? form.religionOther : form.religion],
       ['Skills, talents, and expertise', form.skills, 'wide'],
     ]],
