@@ -69,23 +69,21 @@ export default function RegisteredVoterPrompt() {
       onClose={() => {}}
       dismissible={false}
       size="sm"
-      footer={
-        <>
-          <button type="button" className="btn btn-soft" disabled={busy} onClick={() => saveAnswer('no')}>
-            No
-          </button>
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => saveAnswer('yes')}>
-            {busy ? 'Saving…' : 'Yes'}
-          </button>
-        </>
-      }
+      className="voter-prompt-modal"
     >
       <div className="voter-prompt">
         <div className="voter-prompt-icon">
           <Vote size={22} />
         </div>
         <p>Are you a registered voter?</p>
-        <p className="muted">Your answer is saved to your registration form right away.</p>
+        <div className="voter-prompt-actions">
+          <button type="button" className="btn btn-soft" disabled={busy} onClick={() => saveAnswer('no')}>
+            No
+          </button>
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => saveAnswer('yes')}>
+            {busy ? 'Saving…' : 'Yes'}
+          </button>
+        </div>
       </div>
     </Modal>
   )

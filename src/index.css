@@ -1878,31 +1878,56 @@ select.input {
   border-radius: 0 0 20px 20px;
 }
 
+.voter-prompt-modal .modal-header {
+  justify-content: center;
+  text-align: center;
+}
+
+.voter-prompt-modal .modal-header > div {
+  width: 100%;
+}
+
+.voter-prompt-modal .modal-body {
+  padding-top: 12px;
+  padding-bottom: 28px;
+}
+
 .voter-prompt {
   display: grid;
-  gap: 10px;
-  justify-items: start;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
 }
 
 .voter-prompt-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   background: rgba(16, 185, 129, 0.12);
   color: #047857;
 }
 
 .voter-prompt p {
   margin: 0;
-  line-height: 1.55;
-  font-size: 1rem;
-  font-weight: 700;
+  max-width: 16rem;
+  line-height: 1.45;
+  font-size: 1.08rem;
+  font-weight: 800;
 }
 
-.voter-prompt .muted {
-  font-weight: 400;
+.voter-prompt-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.voter-prompt-actions .btn {
+  min-width: 108px;
 }
 
 .confirm {

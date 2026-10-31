@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
-export default function Modal({ title, subtitle, onClose, children, footer, size = 'md', dismissible = true }) {
+export default function Modal({ title, subtitle, onClose, children, footer, size = 'md', dismissible = true, className = '' }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape' && dismissible) onClose()
@@ -22,7 +22,7 @@ export default function Modal({ title, subtitle, onClose, children, footer, size
         if (dismissible && e.target === e.currentTarget) onClose()
       }}
     >
-      <div className={`modal modal-${size}`} role="dialog" aria-modal="true">
+      <div className={`modal modal-${size} ${className}`.trim()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div>
             <h2>{title}</h2>
