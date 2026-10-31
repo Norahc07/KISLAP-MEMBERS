@@ -83,10 +83,11 @@ begin
     email := lower(uname) || '@advisers.kislap.app';
     perform public.provision_login(email, pwd, uname, null, 'adviser', clean, true, false);
   else
+    -- Reuse the lowest vacant membership ID (deleted members leave these open).
     select t.member_no into slot
     from public.membership_tracker t
-    where btrim(t.full_name) = ''
-      and t.member_id is null
+    where t.member_id is null
+      and btrim(coalesce(t.full_name, '')) = ''
     order by t.member_no
     limit 1
     for update;
@@ -96,6 +97,7 @@ begin
       insert into public.membership_tracker (member_no, member_id, full_name, tracker_role)
       values (slot, new_member, clean, track_role);
     else
+      delete from public.registrations where member_no = slot;
       update public.membership_tracker
       set member_id = new_member,
           full_name = clean,
@@ -189,12 +191,16 @@ begin
   limit 1;
 
   if slot is not null then
+    -- Free the membership ID for a future member: drop login, form, and tracker name.
+    delete from public.registrations where member_no = slot;
+
     delete from auth.users
     where id in (
       select id from public.profiles
       where member_no = slot
         and role <> 'admin'
     );
+
     update public.membership_tracker
     set member_id = null,
         full_name = '',

@@ -68,9 +68,14 @@ export default function Members() {
 
   async function handleDelete() {
     try {
+      const code = numberByMember.get(deleting.id)
       await deleteMember(deleting)
       await reload()
-      toast.success('Member removed')
+      toast.success(
+        code
+          ? `${deleting.full_name} removed. ${memberCode(code)} is vacant and can be given to a new member.`
+          : 'Member removed',
+      )
     } catch (err) {
       toast.error(errorMessage(err))
     }
@@ -216,7 +221,7 @@ export default function Members() {
       {deleting && !isAdviser && (
         <ConfirmDialog
           title="Remove member?"
-          message={`${deleting.full_name} will be removed and any position they hold will become vacant.`}
+          message={`${deleting.full_name} will be removed. Their membership ID stays open as vacant and can be assigned to a new member. Any position they hold becomes vacant.`}
           confirmLabel="Remove"
           onConfirm={handleDelete}
           onClose={() => setDeleting(null)}
