@@ -254,15 +254,6 @@ code {
   gap: 18px;
 }
 
-.documents-toggle {
-  display: inline-flex;
-  gap: 8px;
-  padding: 4px;
-  border-radius: 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-}
-
 .documents-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -303,29 +294,46 @@ code {
   cursor: pointer;
 }
 
-.document-card-media,
-.document-post-media {
+.document-card-media {
   display: block;
   width: 100%;
   padding: 0;
   border: 0;
   background: #0f172a;
   cursor: zoom-in;
-}
-
-.document-card-media {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
 }
 
 .document-card-media img,
-.document-post-media img,
-.document-lightbox-frame img {
+.document-thumb,
+.document-pdf-thumb img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top center;
+}
+
+.document-pdf-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #e2e8f0;
+}
+
+.document-pdf-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .document-pdf-preview {
@@ -336,17 +344,13 @@ code {
   gap: 8px;
   width: 100%;
   height: 100%;
-  min-height: 220px;
+  min-height: 160px;
   padding: 24px 18px;
   background:
     radial-gradient(420px 180px at 50% 0%, rgba(16, 185, 129, 0.18), transparent 70%),
     linear-gradient(180deg, #0f172a, #1e293b);
   color: #e2e8f0;
   text-align: center;
-}
-
-.document-pdf-preview.is-feed {
-  min-height: 280px;
 }
 
 .document-pdf-preview strong {
@@ -362,17 +366,77 @@ code {
   line-height: 1.4;
 }
 
-.document-pdf-frame {
+.document-pdf-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #e2e8f0;
+}
+
+.document-pdf-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.document-pdf-toolbar strong {
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.document-pdf-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  background: #e8edf3;
+  overflow: hidden;
+}
+
+.document-pdf-stage img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: block;
-  width: 100%;
-  min-height: min(72vh, 820px);
-  height: 72vh;
-  border: 0;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
   background: #fff;
 }
 
+.document-pdf-stage .document-pdf-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.document-pdf-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 18px;
+  color: #334155;
+  text-align: center;
+}
+
 .document-lightbox-panel.is-pdf {
-  width: min(1080px, 100%);
+  width: min(980px, 100%);
 }
 
 .document-card-body {
@@ -382,8 +446,7 @@ code {
   padding: 16px 16px 8px;
 }
 
-.document-kind,
-.document-verified {
+.document-kind {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -398,16 +461,14 @@ code {
   text-transform: uppercase;
 }
 
-.document-card-title,
-.document-post-copy h2 {
+.document-card-title {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
-.document-card-summary,
-.document-post-copy p {
+.document-card-summary {
   margin: 0;
   color: var(--muted);
   font-size: 0.88rem;
@@ -453,70 +514,65 @@ code {
   padding: 0 16px 16px;
 }
 
-.documents-feed {
+.documents-loading {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 220px;
+}
+
+.document-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 680px;
-  margin: 0 auto;
-  width: 100%;
+  gap: 14px;
 }
 
-.document-post {
-  overflow: hidden;
-  border-radius: 22px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+.document-form .form-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
-.document-post-head {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+.document-file-picker {
+  position: relative;
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  cursor: pointer;
+  color: var(--text);
 }
 
-.document-post-head strong {
-  display: block;
-  font-size: 0.95rem;
+.document-file-picker:hover {
+  border-color: #86efac;
+  background: rgba(16, 185, 129, 0.06);
 }
 
-.document-post-head small {
+.document-file-picker span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.document-file-picker strong {
+  font-size: 0.92rem;
+}
+
+.document-file-picker small {
   color: var(--muted);
   font-size: 0.78rem;
 }
 
-.document-post-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 16px 12px;
-}
-
-.document-post-media {
-  border-radius: 0;
-}
-
-.document-post-media img {
-  max-height: 720px;
-  object-fit: contain;
-  background: #111827;
-}
-
-.document-post-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px 14px;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.document-post-foot a {
-  color: var(--primary);
-  font-weight: 700;
+.document-file-picker input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .document-lightbox {
@@ -525,7 +581,7 @@ code {
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: 12px;
 }
 
 .document-lightbox-scrim {
@@ -540,18 +596,19 @@ code {
 .document-lightbox-panel {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
   width: min(920px, 100%);
-  max-height: calc(100vh - 36px);
-  overflow: auto;
+  height: min(96vh, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
   border-radius: 18px;
   background: #0b1220;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
 .document-lightbox-bar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -575,24 +632,48 @@ code {
   gap: 8px;
 }
 
-.document-lightbox-frame {
-  background: #fff;
+.document-lightbox-actions .btn-soft {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
 }
 
-.document-lightbox-frame img {
+.document-lightbox-actions .btn-soft:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #020617;
+}
+
+.document-lightbox-frame {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  background: #e8edf3;
+  padding: 10px;
+}
+
+.document-lightbox-frame > img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   object-fit: contain;
   background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
 }
 
-.document-lightbox-footer {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  justify-content: flex-end;
-  padding: 12px 14px;
-  background: rgba(11, 18, 32, 0.94);
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
+.document-lightbox-frame > .document-pdf-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.document-lightbox-panel.is-pdf .document-lightbox-frame {
+  padding: 0;
+  background: #e2e8f0;
 }
 
 @media (max-width: 1100px) {
@@ -604,22 +685,6 @@ code {
 @media (max-width: 720px) {
   .documents-grid {
     grid-template-columns: 1fr;
-  }
-
-  .documents-toggle {
-    width: 100%;
-  }
-
-  .documents-toggle .btn {
-    flex: 1;
-  }
-
-  .document-post-head {
-    grid-template-columns: auto 1fr;
-  }
-
-  .document-verified {
-    grid-column: 2;
   }
 }
 
