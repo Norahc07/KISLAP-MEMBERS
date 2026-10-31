@@ -13,6 +13,7 @@ import Settings from './pages/Settings'
 import AuditLog from './pages/AuditLog'
 import ChangePassword from './pages/ChangePassword'
 import Landing from './pages/Landing'
+import Documents from './pages/Documents'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
@@ -115,6 +116,7 @@ export default function App() {
         }
       >
         <Route index element={<OrgChart />} />
+        <Route path="documents" element={<Documents />} />
         <Route path="account" element={<MemberAccount />} />
         <Route path="register" element={<MemberRegister />} />
         <Route

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 
@@ -10,15 +10,18 @@ export default function Layout() {
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
+  const documentsLink = { to: '/documents', label: 'Documents', icon: FolderOpen }
   const nav = isAdviser
     ? [
         { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
+        documentsLink,
         { to: '/account', label: 'My account', icon: UserRound },
         { to: '/members', label: 'Members', icon: Users },
         { to: '/assign', label: 'Assigned Roles', icon: Network },
       ]
     : [
         { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
+        documentsLink,
         ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
         { to: '/register', label: 'Registration', icon: FileText },
         ...(isAdmin ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
