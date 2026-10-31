@@ -1,9 +1,35 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, LayoutGrid, Rows3, ShieldCheck, X } from 'lucide-react'
+import { ExternalLink, FileText, LayoutGrid, Rows3, ShieldCheck, X } from 'lucide-react'
 import Logo from '../components/Logo'
-import { ORGANIZATION_DOCUMENTS, formatDocumentDate } from '../lib/documents'
+import { ORGANIZATION_DOCUMENTS, formatDocumentDate, isPdfDocument } from '../lib/documents'
 
 const VIEW_KEY = 'kislap-documents-view'
+
+function DocumentPreview({ doc, className = '' }) {
+  if (isPdfDocument(doc)) {
+    return (
+      <span className={`document-pdf-preview ${className}`.trim()}>
+        <FileText size={42} />
+        <strong>PDF</strong>
+        <small>{doc.title}</small>
+      </span>
+    )
+  }
+  return <img src={doc.src} alt="" loading="lazy" />
+}
+
+function DocumentSource({ doc }) {
+  if (isPdfDocument(doc)) {
+    return (
+      <iframe
+        className="document-pdf-frame"
+        title={doc.title}
+        src={`${doc.src}#view=FitH`}
+      />
+    )
+  }
+  return <img src={doc.src} alt={doc.title} />
+}
 
 export default function Documents() {
   const [view, setView] = useState(() => {
@@ -43,7 +69,7 @@ export default function Documents() {
         <div>
           <p className="eyebrow">Organization</p>
           <h1>Documents</h1>
-          <p className="muted">Official papers that show KISLAP Youth Volunteers is recognized in Barangay Polo, Mauban.</p>
+          <p className="muted">Official papers that show KISLAP Youth Volunteers is recognized and how the organization is run.</p>
         </div>
         <div className="documents-toggle" role="group" aria-label="Document layout">
           <button
@@ -71,7 +97,7 @@ export default function Documents() {
             <article key={doc.id} className="document-card is-clickable">
               <button type="button" className="document-card-hit" onClick={() => setActive(doc)} aria-label={`Open ${doc.title}`}>
                 <span className="document-card-media">
-                  <img src={doc.image} alt="" loading="lazy" />
+                  <DocumentPreview doc={doc} />
                 </span>
                 <span className="document-card-body">
                   <span className="document-kind">{doc.kind}</span>
@@ -93,7 +119,7 @@ export default function Documents() {
               <div className="document-card-actions">
                 <a
                   className="btn btn-ghost btn-sm"
-                  href={doc.image}
+                  href={doc.src}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(event) => event.stopPropagation()}
@@ -123,11 +149,11 @@ export default function Documents() {
                 <p>{doc.summary}</p>
               </div>
               <button type="button" className="document-post-media" onClick={() => setActive(doc)} aria-label={`Open ${doc.title}`}>
-                <img src={doc.image} alt={doc.title} loading="lazy" />
+                <DocumentPreview doc={doc} className="is-feed" />
               </button>
               <footer className="document-post-foot">
                 <span>{doc.issuedBy}</span>
-                <a href={doc.image} target="_blank" rel="noreferrer">
+                <a href={doc.src} target="_blank" rel="noreferrer">
                   Open file
                 </a>
               </footer>
@@ -139,14 +165,14 @@ export default function Documents() {
       {active && (
         <div className="document-lightbox" role="dialog" aria-modal="true" aria-label={active.title}>
           <button type="button" className="document-lightbox-scrim" aria-label="Close document" onClick={() => setActive(null)} />
-          <div className="document-lightbox-panel">
+          <div className={`document-lightbox-panel ${isPdfDocument(active) ? 'is-pdf' : ''}`}>
             <div className="document-lightbox-bar">
               <div>
                 <strong>{active.title}</strong>
                 <small>{active.issuedBy} · {formatDocumentDate(active.issuedOn)}</small>
               </div>
               <div className="document-lightbox-actions">
-                <a className="btn btn-soft btn-sm" href={active.image} target="_blank" rel="noreferrer">
+                <a className="btn btn-soft btn-sm" href={active.src} target="_blank" rel="noreferrer">
                   <ExternalLink size={15} /> Open file
                 </a>
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setActive(null)}>
@@ -155,7 +181,7 @@ export default function Documents() {
               </div>
             </div>
             <div className="document-lightbox-frame">
-              <img src={active.image} alt={active.title} />
+              <DocumentSource doc={active} />
             </div>
             <div className="document-lightbox-footer">
               <button type="button" className="btn btn-soft" onClick={() => setActive(null)}>
