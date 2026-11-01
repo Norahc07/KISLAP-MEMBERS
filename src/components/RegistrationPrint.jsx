@@ -42,7 +42,7 @@ function SignatureInk({ src, scale = 1 }) {
   return (
     <img
       className="sign-preview"
-      src={shown || undefined}
+      src={shown || src}
       alt="E-signature"
       data-sign-ready={ready ? '1' : '0'}
       style={{ '--sign-scale': scale }}

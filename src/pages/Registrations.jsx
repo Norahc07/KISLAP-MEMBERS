@@ -600,7 +600,10 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onFo
         </div>
       </div>
 
-      <RegistrationPrint form={form} preview signatureScale={scale} />
+      <div className="register-form-stage ereg-form-stage">
+        <p className="register-form-stage-label">Membership registration form</p>
+        <RegistrationPrint form={form} preview blankSignatures={false} signatureScale={scale} />
+      </div>
 
       {!confirmed && editing && (
         <ResponseEditor form={form} setForm={setForm} saving={saving} error={error} onSave={saveResponses} onCancel={cancelEdit} />

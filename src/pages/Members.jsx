@@ -93,7 +93,10 @@ export default function Members() {
             <p className="muted">{memberCode(viewing.registration.member_no)} · Approved registration</p>
           </div>
         </div>
-        <RegistrationPrint form={fromRow(viewing.registration)} preview />
+        <div className="register-form-stage ereg-form-stage">
+          <p className="register-form-stage-label">Membership registration form</p>
+          <RegistrationPrint form={fromRow(viewing.registration)} preview blankSignatures={false} />
+        </div>
       </div>
     )
   }

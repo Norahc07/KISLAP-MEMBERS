@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Pencil, Plus, Printer } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, CheckCircle2, Clock3, Pencil, Plus, Printer, ShieldAlert } from 'lucide-react'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
 import { useAuth } from '../context/AuthContext'
@@ -192,11 +192,11 @@ export default function Register() {
     return (
       <RegisterShell form={form} lookup={lookup}>
         <section className="register-official register-saved">
-          <header className="register-official-bar">
-            <div>
-              <p className="eyebrow">
-                <CheckCircle2 size={18} /> {savedStatus ? 'Saved' : 'Submitted'}
-              </p>
+          <header className="register-status-card is-approved">
+            <div className="register-status-copy">
+              <span className="register-status-pill">
+                <CheckCircle2 size={15} /> {savedStatus ? 'Saved' : 'Submitted'}
+              </span>
               <h1>{savedStatus ? 'Registration updated' : 'Registration received'}</h1>
               <p>
                 {savedStatus ? (
@@ -216,7 +216,7 @@ export default function Register() {
                 )}
               </p>
             </div>
-            <div className="register-nav">
+            <div className="register-status-actions">
               <button type="button" className="btn btn-soft" onClick={() => window.print()}>
                 <Printer size={16} /> Print
               </button>
@@ -230,7 +230,10 @@ export default function Register() {
               )}
             </div>
           </header>
-          <RegistrationPrint form={form} lookup={lookup} preview />
+          <div className="register-form-stage">
+            <p className="register-form-stage-label">Membership registration form</p>
+            <RegistrationPrint form={form} lookup={lookup} preview />
+          </div>
         </section>
       </RegisterShell>
     )
@@ -251,13 +254,15 @@ export default function Register() {
     return (
       <RegisterShell form={form} lookup={lookup}>
         <section className="register-official">
-          <header className="register-official-bar">
-            <div>
-              <p className="eyebrow">Declined</p>
-              <h1>Your registration was not approved</h1>
-              <p>Read the remark below, correct the form, and submit a new registration.</p>
+          <header className="register-status-card is-declined">
+            <div className="register-status-copy">
+              <span className="register-status-pill">
+                <ShieldAlert size={15} /> Declined
+              </span>
+              <h1>Your registration needs updates</h1>
+              <p>Read the remark below, correct the form, and submit again.</p>
             </div>
-            <div className="register-nav">
+            <div className="register-status-actions">
               <button
                 type="button"
                 className="btn btn-primary"
@@ -270,7 +275,7 @@ export default function Register() {
               >
                 <Pencil size={16} /> Submit a new registration
               </button>
-              <Link to="/account" className="btn btn-ghost">
+              <Link to="/account" className="btn btn-soft">
                 Back to my account
               </Link>
             </div>
@@ -279,7 +284,9 @@ export default function Register() {
             <strong>Why it was declined</strong>
             <span>{form.remarks.trim() || 'An officer declined this registration. Submit a new one after you correct it.'}</span>
           </div>
-          <RegistrationPrint form={form} lookup={lookup} preview />
+          <div className="register-form-stage">
+            <RegistrationPrint form={form} lookup={lookup} preview />
+          </div>
         </section>
       </RegisterShell>
     )
@@ -290,17 +297,20 @@ export default function Register() {
     return (
       <RegisterShell form={form} lookup={lookup}>
         <section className="register-official">
-          <header className="register-official-bar">
-            <div>
-              <p className="eyebrow">{approved ? 'Approved' : 'On hold'}</p>
+          <header className={`register-status-card ${approved ? 'is-approved' : 'is-pending'}`}>
+            <div className="register-status-copy">
+              <span className="register-status-pill">
+                {approved ? <BadgeCheck size={15} /> : <Clock3 size={15} />}
+                {approved ? 'Approved' : 'On hold'}
+              </span>
               <h1>Your registration form</h1>
               <p>
                 {approved
-                  ? 'This registration is approved. Review the form below and update any missing or incorrect details.'
-                  : 'This registration is on hold. An officer is still reviewing it. You can update any missing or incorrect details.'}
+                  ? 'Your membership registration is approved. Review the form below, or print it for hardcopy signing.'
+                  : 'An officer is still reviewing this form. You can update details or print a copy while you wait.'}
               </p>
             </div>
-            <div className="register-nav">
+            <div className="register-status-actions">
               <button
                 type="button"
                 className="btn btn-primary"
@@ -321,7 +331,10 @@ export default function Register() {
               </Link>
             </div>
           </header>
-          <RegistrationPrint form={form} lookup={lookup} preview />
+          <div className="register-form-stage">
+            <p className="register-form-stage-label">Membership registration form</p>
+            <RegistrationPrint form={form} lookup={lookup} preview />
+          </div>
         </section>
       </RegisterShell>
     )

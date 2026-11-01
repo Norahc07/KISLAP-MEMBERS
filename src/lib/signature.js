@@ -68,13 +68,14 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
 }
 
+/** Re-prepare a saved signature for clear display without washing it out. */
 export function cleanSignatureSource(source) {
   if (typeof source !== 'string' || !source.startsWith('data:image/')) return Promise.resolve(source)
   return new Promise((resolve) => {
     const image = new Image()
     image.onload = () => {
       try {
-        resolve(inkSignature(image))
+        resolve(hasTransparentInk(image) ? boostSignatureInk(image) : inkSignature(image))
       } catch {
         resolve(source)
       }
@@ -82,6 +83,51 @@ export function cleanSignatureSource(source) {
     image.onerror = () => resolve(source)
     image.src = source
   })
+}
+
+function hasTransparentInk(image) {
+  const sample = document.createElement('canvas')
+  const side = Math.min(96, image.width, image.height)
+  sample.width = side
+  sample.height = side
+  const ctx = sample.getContext('2d', { willReadFrequently: true })
+  ctx.drawImage(image, 0, 0, side, side)
+  const data = ctx.getImageData(0, 0, side, side).data
+  let clear = 0
+  let ink = 0
+  for (let index = 0; index < data.length; index += 4) {
+    if (data[index + 3] < 16) clear += 1
+    else ink += 1
+  }
+  return ink > 20 && clear / (side * side) > 0.18
+}
+
+function boostSignatureInk(image) {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.drawImage(image, 0, 0)
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = pixels.data
+  for (let index = 0; index < data.length; index += 4) {
+    const alpha = data[index + 3]
+    if (alpha < 10) {
+      data[index] = 0
+      data[index + 1] = 0
+      data[index + 2] = 0
+      data[index + 3] = 0
+      continue
+    }
+    const luma = lumaOf(data[index], data[index + 1], data[index + 2])
+    const strength = Math.max(0.55, Math.min(1, (255 - luma) / 180))
+    data[index] = 15
+    data[index + 1] = 23
+    data[index + 2] = 42
+    data[index + 3] = Math.min(255, Math.round(Math.max(alpha, 140) * (0.85 + strength * 0.35)))
+  }
+  ctx.putImageData(pixels, 0, 0)
+  return canvas.toDataURL('image/png')
 }
 
 function inkSignature(image) {
@@ -130,7 +176,17 @@ function inkSignature(image) {
         data[index + 2] = 0
         data[index + 3] = 0
       } else if (neutral && luma > background - 58 && luma < background) {
-        data[index + 3] = Math.min(data[index + 3], Math.max(0, Math.round(((background - luma - 26) / 32) * 255)))
+        const edge = Math.max(0, Math.min(1, (background - luma - 8) / 50))
+        data[index] = 15
+        data[index + 1] = 23
+        data[index + 2] = 42
+        data[index + 3] = Math.round(255 * Math.pow(edge, 0.55))
+      } else {
+        // Keep signature strokes dark and fully visible on the form.
+        data[index] = 15
+        data[index + 1] = 23
+        data[index + 2] = 42
+        data[index + 3] = 255
       }
       if (data[index + 3] > 24) {
         if (x < minX) minX = x
