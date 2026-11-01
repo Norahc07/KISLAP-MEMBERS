@@ -310,7 +310,7 @@ export function validateStep(stepId, form, lookup) {
   }
 
   if (stepId === 'emergency') {
-    need(form.guardianName.trim(), 'Parent, guardian, or emergency contact name')
+    need(form.guardianName.trim(), 'Guardian Full Name')
     need(form.guardianContact.trim(), 'Emergency contact number')
     need(form.guardianRelationship.trim(), 'Relationship to the applicant')
   }

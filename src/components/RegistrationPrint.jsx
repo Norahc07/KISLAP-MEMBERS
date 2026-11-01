@@ -50,7 +50,8 @@ function SignatureInk({ src, scale = 1 }) {
   )
 }
 
-export default function RegistrationPrint({ form, lookup, preview = false, signatureScale = 1 }) {
+export default function RegistrationPrint({ form, lookup, preview = false, signatureScale = 1, blankSignatures }) {
+  const hideInk = blankSignatures ?? !preview
   const code = parseMemberNo(form.memberNo)
   const name = [form.firstName, form.middleName, form.surname, form.suffix].filter(Boolean).join(' ')
   const schools = educationVisibility(form.educationLevel, form.schoolWorkStatus)
@@ -60,14 +61,14 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
   ]
   if (schools.elementary) educationRows.push(['Elementary school', form.elementarySchool])
   if (schools.highSchool) educationRows.push(['Secondary school', form.highSchool])
-  if (schools.strand) educationRows.push(['Strand (SHS)', form.strand === 'Other' ? form.strandOther : form.strand])
+  if (schools.strand) educationRows.push(['Strand (SHS)', form.strand === 'Other' ? form.strandOther : form.strand, 'wide'])
   if (schools.college) {
-    educationRows.push(['College school', form.collegeSchool])
-    educationRows.push(['College course / major', form.course])
+    educationRows.push(['College school', form.collegeSchool, 'wide'])
+    educationRows.push(['College course / major', form.course, 'wide'])
   }
   if (schools.vocational) educationRows.push(['Vocational / technical school', form.schoolName])
   if (schools.other) educationRows.push(['School name', form.schoolName])
-  if (schools.grade) educationRows.push(['Current grade level or year', form.gradeLevel])
+  if (schools.grade) educationRows.push(['Current grade level or year', form.gradeLevel, 'wide'])
   const groups = [
     ['A. Personal information', [
       ['Surname', form.surname],
@@ -78,7 +79,7 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
       ['Age', form.age],
       ['Date of birth', formatDisplayDate(form.dateOfBirth), 'date'],
       ['Civil status', labelOf([['single', 'Single'], ['married', 'Married'], ['other', 'Other']], form.civilStatus)],
-      ['Registered voter', labelOf([['yes', 'Yes'], ['no', 'No']], form.registeredVoter)],
+      ['Registered voter', labelOf([['yes', 'Yes'], ['no', 'No']], form.registeredVoter), 'wide'],
       ['Permanent address', form.address, 'wide'],
       ['Barangay', form.barangay],
       ['City / municipality', form.city],
@@ -98,11 +99,11 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
     ]],
     ['D. Educational background', educationRows],
     ['E. Emergency guardian', [
-      ['Guardian name', form.guardianName],
+      ['Guardian Full Name', form.guardianName],
       ['Contact number', form.guardianContact],
       ['Relationship', form.guardianRelationship],
       ['Alternative contact', form.altContactName],
-      ['Alternative number', form.altContactNumber],
+      ['Alternative number', form.altContactNumber, 'wide'],
     ]],
     ['F. Volunteer interests', [
       ['Areas', form.interests.join(', '), 'wide'],
@@ -115,7 +116,7 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
       ['Applicant declaration', form.certified ? 'Agreed' : ''],
       ['Privacy consent', form.privacyConsent ? 'Yes' : ''],
       ['Announcements', form.announcementsConsent ? 'Yes' : ''],
-      ['Public photo consent', form.photoPublicConsent ? 'Yes' : 'No'],
+      ['Public photo consent', form.photoPublicConsent ? 'Yes' : 'No', 'wide'],
     ]],
   ]
   const signatures = [
@@ -165,13 +166,18 @@ export default function RegistrationPrint({ form, lookup, preview = false, signa
             ))}
           </dl>
           {title.startsWith('G.') && (
-            <div className="sign-board">
+            <div className={`sign-board ${hideInk ? 'is-blank-ink' : ''}`}>
               {signatures.map(([role, printed, signature, signedOn]) => (
                 <figure key={role} className="sign-block">
                   <figcaption>{role}</figcaption>
                   <p className="sign-name">{printed || '—'}</p>
-                  <div className="sign-line">{renderFieldValue(signature, signatureScale)}</div>
-                  <p className="sign-date"><span>Date</span><strong>{signedOn || '—'}</strong></p>
+                  <div className="sign-line">
+                    {hideInk ? <span className="sign-space" aria-hidden="true" /> : renderFieldValue(signature, signatureScale)}
+                  </div>
+                  <p className="sign-date">
+                    <span>Date</span>
+                    <strong className={hideInk ? 'is-blank' : ''}>{hideInk ? '\u00a0' : signedOn || '—'}</strong>
+                  </p>
                 </figure>
               ))}
             </div>

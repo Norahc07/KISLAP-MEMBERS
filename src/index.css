@@ -3129,8 +3129,8 @@ select.input {
   display: grid;
   grid-template-columns: minmax(96px, 0.78fr) minmax(0, 1.22fr) minmax(96px, 0.78fr) minmax(0, 1.22fr);
   margin: 0;
-  border: 1px solid #1e293b;
-  border-top: 0;
+  /* Borders live on each field row — a container border bleeds across page breaks when printing. */
+  border: 0;
 }
 
 .registration-sheet .print-fields > div,
@@ -3140,8 +3140,10 @@ select.input {
   grid-column: span 2;
   align-items: stretch;
   min-width: 0;
-  border-bottom: 1px solid #e2e8f0;
-  border-right: 1px solid #e2e8f0;
+  border: 1px solid #1e293b;
+  margin: 0 0 -1px -1px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .registration-sheet .print-fields > div.wide,
@@ -3206,6 +3208,8 @@ select.input {
   min-height: 1.3em;
   margin: 4px 0 8px;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .sign-line {
@@ -3224,6 +3228,12 @@ select.input {
   margin-bottom: 2px;
 }
 
+.sign-space {
+  display: block;
+  width: 100%;
+  min-height: calc(56px * var(--sign-scale, 1));
+}
+
 .sign-date {
   display: flex;
   justify-content: space-between;
@@ -3237,6 +3247,13 @@ select.input {
   color: #0f172a;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
+  min-width: 5.5rem;
+  text-align: right;
+  border-bottom: 1px solid #0f172a;
+}
+
+.sign-date strong.is-blank {
+  color: transparent;
 }
 
 @media (max-width: 720px) {
@@ -3436,48 +3453,69 @@ select.input {
     print-color-adjust: exact;
   }
 
+  /* Same print layout for admin eRegForms and member /register Print */
+  .registration-sheet {
+    display: none !important;
+  }
+
   .registration-print .print-fields,
-  .registration-print .sign-board {
+  .registration-print .sign-board,
+  .print-fields,
+  .sign-board {
     display: grid !important;
   }
 
-  .registration-print .print-fields {
+  .registration-print .print-fields,
+  .print-fields {
     grid-template-columns: minmax(32mm, 0.85fr) minmax(0, 1.15fr) minmax(32mm, 0.85fr) minmax(0, 1.15fr) !important;
+    border: 0 !important;
+    overflow: visible;
   }
 
-  .registration-print .sign-board {
+  .registration-print .sign-board,
+  .sign-board {
     grid-template-columns: 1fr 1fr !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
   .registration-print .print-fields > div,
-  .registration-print .print-fields > div.wide {
+  .registration-print .print-fields > div.wide,
+  .print-fields > div,
+  .print-fields > div.wide {
     display: grid !important;
     grid-template-columns: subgrid !important;
     grid-column: span 2 !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid;
     padding: 0;
+    border: 0.75pt solid #1e293b !important;
+    margin: 0 0 -0.75pt -0.75pt !important;
+    background: #fff;
   }
 
-  .registration-print .print-fields > div.wide {
+  .registration-print .print-fields > div.wide,
+  .print-fields > div.wide {
     grid-column: 1 / -1 !important;
   }
 
-  .registration-print .print-fields > div.wide dd {
+  .registration-print .print-fields > div.wide dd,
+  .print-fields > div.wide dd {
     grid-column: 2 / -1 !important;
   }
 
   .print-fields > div {
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
     padding: 0;
   }
 
   .print-fields dt,
   .print-fields dd {
     padding: 1.4mm 2.2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .print-fields dt {
@@ -3501,9 +3539,17 @@ select.input {
 
   .sign-line .sign-preview,
   .sign-preview {
-    height: auto !important;
-    max-height: calc(16mm * var(--sign-scale, 1)) !important;
-    max-width: calc(52mm * var(--sign-scale, 1)) !important;
+    display: none !important;
+  }
+
+  .sign-space {
+    min-height: calc(16mm * var(--sign-scale, 1));
+  }
+
+  .sign-date strong {
+    color: transparent !important;
+    border-bottom: 1px solid #0f172a;
+    min-width: 28mm;
   }
 }
 
@@ -4114,6 +4160,11 @@ select.input {
   justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.ereg-member-name {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .ereg-pick {

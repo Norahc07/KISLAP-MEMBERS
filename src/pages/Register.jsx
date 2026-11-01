@@ -456,7 +456,11 @@ function RegisterShell({ children, form, lookup }) {
       <div className="screen-only">
         <main className="register-main register-main-inset">{children}</main>
       </div>
-      {form && <RegistrationPrint form={form} lookup={lookup} />}
+      {form && (
+        <div className="ereg-print-target">
+          <RegistrationPrint form={form} lookup={lookup} blankSignatures />
+        </div>
+      )}
     </div>
   )
 }
@@ -767,7 +771,7 @@ function EmergencyStep({ form, setField }) {
         Name someone who can be reached in an emergency. This guardian is separate from the father and mother already entered.
         {minor ? ' Because you are under 18, choose an adult who can be contacted.' : ''}
       </p>
-      <TextField label="Emergency guardian name" value={form.guardianName} onChange={setField('guardianName')} required placeholder="Ana Reyes" />
+      <TextField label="Guardian Full Name" value={form.guardianName} onChange={setField('guardianName')} required placeholder="Ana Reyes" hint="Full name of the parent, guardian, or emergency contact." />
       <div className="field-row">
         <TextField label="Contact number" value={form.guardianContact} onChange={setField('guardianContact')} required inputMode="tel" placeholder="09XX XXX XXXX" />
         <TextField label="Relationship to applicant" value={form.guardianRelationship} onChange={setField('guardianRelationship')} required placeholder="Aunt, uncle, or guardian" />

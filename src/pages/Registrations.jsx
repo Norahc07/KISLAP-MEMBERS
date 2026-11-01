@@ -326,7 +326,7 @@ export default function Registrations() {
                     ) : null}
                   </td>
                   <td><Avatar src={person.photo} name={person.name} size={40} /></td>
-                  <td><strong>{person.name}</strong></td>
+                  <td><strong className="ereg-member-name">{person.name}</strong></td>
                   <td>{person.position}</td>
                   <td className="member-code">{memberCode(person.tracker.member_no)}</td>
                   <td><span className={`badge badge-${person.status.key}`}>{person.status.label}</span></td>
@@ -712,7 +712,7 @@ function ResponseEditor({ form, setForm, saving, error, onSave, onCancel }) {
       </div>
       <h3>Emergency guardian</h3>
       <div className="response-grid">
-        <Text label="Guardian name" value={form.guardianName} onChange={(value) => patch('guardianName', value)} />
+        <Text label="Guardian Full Name" value={form.guardianName} onChange={(value) => patch('guardianName', value)} />
         <Text label="Contact number" value={form.guardianContact} onChange={(value) => patch('guardianContact', value)} />
         <Text label="Relationship" value={form.guardianRelationship} onChange={(value) => patch('guardianRelationship', value)} />
         <Text label="Alternative contact" value={form.altContactName} onChange={(value) => patch('altContactName', value)} />
