@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, ClipboardList, Crop, Download, Minus, Pencil, Plus, Printer, RotateCcw, RotateCw, Search } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardList, Crop, Download, Minus, Pencil, Plus, Printer, RotateCcw, RotateCw, Search, Trash2, Upload } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
@@ -600,50 +600,46 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onFo
         </div>
       </div>
 
-      <div className="register-form-stage ereg-form-stage">
-        <p className="register-form-stage-label">Membership registration form</p>
-        <RegistrationPrint form={form} preview blankSignatures={false} signatureScale={scale} />
-      </div>
-
-      {!confirmed && editing && (
+      {!confirmed && editing ? (
         <ResponseEditor form={form} setForm={setForm} saving={saving} error={error} onSave={saveResponses} onCancel={cancelEdit} />
-      )}
-
-      {!confirmed ? (
-        <section className="reg-confirm">
-          <div className="sign-size">
-            <span>Signature size</span>
-            <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(-1)} disabled={scale <= MIN_SIGN} aria-label="Decrease signature size">
-              <Minus size={16} /> Smaller
-            </button>
-            <strong>{Math.round(scale * 100)}%</strong>
-            <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(1)} disabled={scale >= MAX_SIGN} aria-label="Increase signature size">
-              <Plus size={16} /> Larger
-            </button>
-          </div>
-          <div>
-            <strong>Confirm this registration</strong>
-            <p className="muted">
-              {savedNote || 'Check the form above. You can update the answers before organization review opens.'}
-            </p>
-          </div>
-          <div className="ereg-actions">
-            {editing ? (
-              <button type="button" className="btn btn-ghost" onClick={cancelEdit}>Cancel editing</button>
-            ) : (
-              <button type="button" className="btn btn-soft" onClick={beginEdit}>
-                <Pencil size={16} /> Edit responses
-              </button>
-            )}
-            {!editing && (
-              <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
-                <CheckCircle2 size={16} /> Confirm and review
-              </button>
-            )}
-          </div>
-        </section>
       ) : (
-        <OrganizationReview form={form} setField={setField} setForm={setForm} saving={saving} error={error} onSave={saveReview} />
+        <>
+          <div className="register-form-stage ereg-form-stage">
+            <p className="register-form-stage-label">Membership registration form</p>
+            <RegistrationPrint form={form} preview blankSignatures={false} signatureScale={scale} />
+          </div>
+
+          {!confirmed ? (
+            <section className="reg-confirm">
+              <div className="sign-size">
+                <span>Signature size</span>
+                <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(-1)} disabled={scale <= MIN_SIGN} aria-label="Decrease signature size">
+                  <Minus size={16} /> Smaller
+                </button>
+                <strong>{Math.round(scale * 100)}%</strong>
+                <button type="button" className="btn btn-soft btn-sm" onClick={() => resizeSignature(1)} disabled={scale >= MAX_SIGN} aria-label="Increase signature size">
+                  <Plus size={16} /> Larger
+                </button>
+              </div>
+              <div>
+                <strong>Confirm this registration</strong>
+                <p className="muted">
+                  {savedNote || 'Check the form above. You can update the answers before organization review opens.'}
+                </p>
+              </div>
+              <div className="ereg-actions">
+                <button type="button" className="btn btn-soft" onClick={beginEdit}>
+                  <Pencil size={16} /> Edit responses
+                </button>
+                <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
+                  <CheckCircle2 size={16} /> Confirm and review
+                </button>
+              </div>
+            </section>
+          ) : (
+            <OrganizationReview form={form} setField={setField} setForm={setForm} saving={saving} error={error} onSave={saveReview} />
+          )}
+        </>
       )}
     </div>
   )
@@ -668,10 +664,13 @@ function ResponseEditor({ form, setForm, saving, error, onSave, onCancel }) {
 
   return (
     <section className="response-editor">
-      <div>
-        <h2>Edit submitted responses</h2>
-        <p className="muted">These answers update the form above. Organization review stays as it is until you confirm.</p>
-      </div>
+      <header className="response-editor-head">
+        <div>
+          <p className="eyebrow">Editing</p>
+          <h2>Edit submitted responses</h2>
+          <p className="muted">Update answers on this screen. The membership form stays closed until you save or cancel.</p>
+        </div>
+      </header>
       <h3>Personal information</h3>
       <div className="response-grid">
         <Text label="Surname" value={form.surname} onChange={(value) => patch('surname', value)} />
@@ -749,8 +748,8 @@ function ResponseEditor({ form, setForm, saving, error, onSave, onCancel }) {
         onToggle={(key) => patch(key, !form[key])}
       />
       {error && <div className="alert">{error}</div>}
-      <div className="register-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+      <div className="response-editor-foot">
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>Cancel</button>
         <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save responses'}
         </button>
@@ -889,53 +888,72 @@ function SignatureReplace({ label, value, onChange }) {
     dragRef.current = null
   }
 
+  function removeSignature() {
+    setCropping(false)
+    setError('')
+    onChange('')
+  }
+
   return (
     <div className="field sign-adjust">
       <span>{label}</span>
-      {image && (
-        <div
-          className={`sign-stage ${cropping ? 'is-cropping' : ''}`}
-          ref={stageRef}
-          role="application"
-          aria-label={`${label} crop`}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-        >
-          <img src={value} alt="" draggable="false" />
-          {cropping && (
-            <div
-              className="sign-crop"
-              style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }}
-            />
-          )}
-        </div>
-      )}
-      {image && (
-        <div className="sign-tools">
-          <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, -1))}>
-            <RotateCcw size={16} /> Rotate left
-          </button>
-          <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, 1))}>
-            <RotateCw size={16} /> Rotate right
-          </button>
-          {cropping ? (
-            <>
-              <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => run(async () => { const next = await cropSignature(value, box); setCropping(false); return next })}>
-                Apply crop
-              </button>
-              <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setCropping(false)}>Cancel crop</button>
-            </>
-          ) : (
-            <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => { setBox({ x: 0.06, y: 0.08, w: 0.88, h: 0.84 }); setCropping(true) }}>
-              <Crop size={16} /> Crop
+      {image ? (
+        <>
+          <div
+            className={`sign-stage ${cropping ? 'is-cropping' : ''}`}
+            ref={stageRef}
+            role="application"
+            aria-label={`${label} crop`}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          >
+            <img src={value} alt="" draggable="false" />
+            {cropping && (
+              <div
+                className="sign-crop"
+                style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }}
+              />
+            )}
+          </div>
+          <div className="sign-tools">
+            <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, -1))}>
+              <RotateCcw size={16} /> Rotate left
             </button>
-          )}
-        </div>
+            <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => run(() => rotateSignature(value, 1))}>
+              <RotateCw size={16} /> Rotate right
+            </button>
+            {cropping ? (
+              <>
+                <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => run(async () => { const next = await cropSignature(value, box); setCropping(false); return next })}>
+                  Apply crop
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setCropping(false)}>Cancel crop</button>
+              </>
+            ) : (
+              <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={() => { setBox({ x: 0.06, y: 0.08, w: 0.88, h: 0.84 }); setCropping(true) }}>
+                <Crop size={16} /> Crop
+              </button>
+            )}
+            <button type="button" className="btn btn-danger btn-sm" disabled={busy || cropping} onClick={removeSignature}>
+              <Trash2 size={16} /> Remove image
+            </button>
+          </div>
+          <label className="btn btn-soft btn-sm sign-upload-btn">
+            <Upload size={16} /> Replace image
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} disabled={busy} />
+          </label>
+        </>
+      ) : (
+        <label className="sign-empty-upload">
+          <Upload size={18} />
+          <strong>Upload signature image</strong>
+          <small>PNG, JPG, or WEBP</small>
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} disabled={busy} />
+        </label>
       )}
-      <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} disabled={busy} />
       <small className="muted">
-        {busy ? 'Updating the signature…' : cropping ? 'Drag the box to keep the ink, then apply the crop.' : 'Upload a replacement, or rotate and crop the signature above. Save responses to keep it.'}
+        {busy ? 'Updating the signature…' : cropping ? 'Drag the box to keep the ink, then apply the crop.' : image ? 'Rotate, crop, replace, or remove this signature. Save responses to keep changes.' : 'No signature image yet. Upload one, then save responses.'}
       </small>
       {error && <div className="alert">{error}</div>}
     </div>

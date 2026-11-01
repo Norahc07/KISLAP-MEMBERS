@@ -1145,11 +1145,38 @@ select.input {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 18px;
+  padding: 20px 22px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 18px;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.response-editor-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.response-editor-head .eyebrow {
+  margin: 0 0 4px;
+}
+
+.response-editor-head h2 {
+  margin: 0;
+}
+
+.response-editor-head .muted {
+  margin: 6px 0 0;
+  max-width: 52ch;
+}
+
+.response-editor-foot {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 .response-editor h2,
@@ -1159,6 +1186,57 @@ select.input {
 
 .response-editor h3 {
   font-size: 0.95rem;
+}
+
+.sign-upload-btn {
+  position: relative;
+  width: fit-content;
+  overflow: hidden;
+}
+
+.sign-upload-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sign-empty-upload {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 140px;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: center;
+  cursor: pointer;
+}
+
+.sign-empty-upload:hover {
+  border-color: #86efac;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.sign-empty-upload strong {
+  font-size: 0.92rem;
+}
+
+.sign-empty-upload small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sign-empty-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .response-grid {
