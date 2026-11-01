@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
@@ -8,8 +8,27 @@ import RegisteredVoterPrompt from './RegisteredVoterPrompt'
 export default function Layout() {
   const { user, profile, signOut, isAdmin, isAdviser, canSeeTracker, setupNeeded } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!open) return undefined
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function onKey(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previous
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
   const documentsLink = { to: '/documents', label: 'Documents', icon: FolderOpen }
   const nav = isAdviser
@@ -49,18 +68,25 @@ export default function Layout() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${open ? ' nav-open' : ''}`}>
       <header className="mobile-bar">
         <div className="brand">
           <Logo size={34} />
           <span>KISLAP</span>
         </div>
-        <button className="icon-btn" onClick={() => setOpen((value) => !value)} aria-label="Toggle menu">
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => setOpen((value) => !value)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          aria-controls="app-sidebar"
+        >
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
 
-      <aside className={`sidebar ${open ? 'open' : ''}`}>
+      <aside id="app-sidebar" className={`sidebar ${open ? 'open' : ''}`}>
         <div className="brand">
           <Logo size={46} />
           <div>
