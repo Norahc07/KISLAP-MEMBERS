@@ -5,6 +5,7 @@ import { fetchTracker, updateTracker } from '../lib/api'
 import Avatar from '../components/Avatar'
 import { errorMessage } from '../lib/constants'
 import { REQUIREMENT_COLUMNS, TRACKER_ROLES, listedOnTracker, memberCode, requirementsComplete } from '../lib/tracker'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
 const STATUS_FILTERS = [
@@ -15,6 +16,8 @@ const STATUS_FILTERS = [
 ]
 
 export default function Tracker() {
+  const { canDo } = useAuth()
+  const canWrite = canDo('tracker_write')
   const toast = useToast()
   const [rows, setRows] = useState([])
   const [members, setMembers] = useState([])
@@ -192,8 +195,12 @@ export default function Tracker() {
                             type="checkbox"
                             className="tracker-check"
                             checked={Boolean(row[column.key])}
+                            disabled={!canWrite}
                             aria-label={`${column.label} for ${row.full_name || memberCode(row.member_no)}`}
-                            onChange={(event) => saveRow(row, { [column.key]: event.target.checked })}
+                            onChange={(event) => {
+                              if (!canWrite) return
+                              saveRow(row, { [column.key]: event.target.checked })
+                            }}
                           />
                         </td>
                       ))}

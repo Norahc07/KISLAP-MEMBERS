@@ -34,9 +34,17 @@ declare
   uname text;
   pwd text;
   email text;
+  allowed boolean := public.is_admin();
 begin
-  if not public.is_admin() then
-    raise exception 'Only the admin can add members.';
+  if not allowed then
+    begin
+      allowed := public.has_page_access('members_create');
+    exception when undefined_function then
+      allowed := false;
+    end;
+  end if;
+  if not allowed then
+    raise exception 'You do not have permission to add members.';
   end if;
   if clean = '' then
     raise exception 'Name is required.';
@@ -146,9 +154,17 @@ as $$
 declare
   item text;
   created jsonb := '[]'::jsonb;
+  allowed boolean := public.is_admin();
 begin
-  if not public.is_admin() then
-    raise exception 'Only the admin can add members.';
+  if not allowed then
+    begin
+      allowed := public.has_page_access('members_create');
+    exception when undefined_function then
+      allowed := false;
+    end;
+  end if;
+  if not allowed then
+    raise exception 'You do not have permission to add members.';
   end if;
   if p_names is null or cardinality(p_names) = 0 then
     raise exception 'Add at least one name.';
@@ -175,9 +191,17 @@ declare
   slot int;
   person text;
   adviser_name text;
+  allowed boolean := public.is_admin();
 begin
-  if not public.is_admin() then
-    raise exception 'Only the admin can remove members.';
+  if not allowed then
+    begin
+      allowed := public.has_page_access('members_delete');
+    exception when undefined_function then
+      allowed := false;
+    end;
+  end if;
+  if not allowed then
+    raise exception 'You do not have permission to remove members.';
   end if;
 
   select full_name into person from public.members where id = p_member_id;

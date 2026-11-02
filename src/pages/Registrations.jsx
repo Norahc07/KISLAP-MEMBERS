@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, ClipboardList, Crop, Download, Minus, Pencil, 
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
+import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import { fetchTracker } from '../lib/api'
@@ -433,6 +434,9 @@ function PrintCopies({ people, previewNo, previewForm }) {
 }
 
 function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onForm, onUpdated }) {
+  const { canDo } = useAuth()
+  const canEdit = canDo('registrations_edit')
+  const canReview = canDo('registrations_review')
   const [confirmed, setConfirmed] = useState(false)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(() => (person?.registration ? fromRow(person.registration) : null))
@@ -628,16 +632,25 @@ function RegistrationReview({ person, onBack, onPrint, onDownload, onSaved, onFo
                 </p>
               </div>
               <div className="ereg-actions">
-                <button type="button" className="btn btn-soft" onClick={beginEdit}>
-                  <Pencil size={16} /> Edit responses
-                </button>
-                <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
-                  <CheckCircle2 size={16} /> Confirm and review
-                </button>
+                {canEdit && (
+                  <button type="button" className="btn btn-soft" onClick={beginEdit}>
+                    <Pencil size={16} /> Edit responses
+                  </button>
+                )}
+                {canReview && (
+                  <button type="button" className="btn btn-primary" onClick={() => setConfirmed(true)}>
+                    <CheckCircle2 size={16} /> Confirm and review
+                  </button>
+                )}
               </div>
             </section>
-          ) : (
+          ) : canReview ? (
             <OrganizationReview form={form} setField={setField} setForm={setForm} saving={saving} error={error} onSave={saveReview} />
+          ) : (
+            <section className="reg-confirm">
+              <p className="muted">You can view this registration. Ask the admin for Review / approve access to finish organization review.</p>
+              <button type="button" className="btn btn-soft" onClick={() => setConfirmed(false)}>Back</button>
+            </section>
           )}
         </>
       )}

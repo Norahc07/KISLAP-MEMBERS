@@ -299,7 +299,11 @@ function DocumentFormModal({ doc, onClose, onSaved }) {
 }
 
 export default function Documents() {
-  const { isAdmin } = useAuth()
+  const { canDo } = useAuth()
+  const canCreate = canDo('documents_create')
+  const canUpdate = canDo('documents_update')
+  const canDelete = canDo('documents_delete')
+  const canManage = canCreate || canUpdate || canDelete
   const toast = useToast()
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -382,7 +386,7 @@ export default function Documents() {
           <h1>Documents</h1>
           <p className="muted">Official papers that show KISLAP Youth Volunteers is recognized and how the organization is run.</p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <button
             type="button"
             className="btn btn-primary"
@@ -399,7 +403,7 @@ export default function Documents() {
         )}
       </div>
 
-      {isAdmin && setupNeeded && (
+      {canManage && setupNeeded && (
         <div className="alert">
           Run <code>supabase/organization-documents.sql</code> in the Supabase SQL Editor to enable adding, editing, and deleting documents.
         </div>
@@ -412,7 +416,7 @@ export default function Documents() {
         </div>
       ) : !documents.length ? (
         <div className="documents-loading">
-          <p className="muted">{isAdmin ? 'No documents yet. Add a PDF or image to get started.' : 'No organization documents are posted yet.'}</p>
+          <p className="muted">{canCreate ? 'No documents yet. Add a PDF or image to get started.' : 'No organization documents are posted yet.'}</p>
         </div>
       ) : (
         <div className="documents-grid">
@@ -445,23 +449,23 @@ export default function Documents() {
                 >
                   <ExternalLink size={15} /> Open file
                 </a>
-                {isAdmin && !setupNeeded && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-soft btn-sm"
-                      onClick={() => setEditing(doc)}
-                    >
-                      <Pencil size={15} /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => setDeleting(doc)}
-                    >
-                      <Trash2 size={15} /> Delete
-                    </button>
-                  </>
+                {!setupNeeded && canUpdate && (
+                  <button
+                    type="button"
+                    className="btn btn-soft btn-sm"
+                    onClick={() => setEditing(doc)}
+                  >
+                    <Pencil size={15} /> Edit
+                  </button>
+                )}
+                {!setupNeeded && canDelete && (
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => setDeleting(doc)}
+                  >
+                    <Trash2 size={15} /> Delete
+                  </button>
                 )}
               </div>
             </article>
@@ -494,7 +498,7 @@ export default function Documents() {
         </div>
       )}
 
-      {(adding || editing) && (
+      {((adding && canCreate) || (editing && canUpdate)) && (
         <DocumentFormModal
           doc={editing}
           onClose={() => {
@@ -509,7 +513,7 @@ export default function Documents() {
         />
       )}
 
-      {deleting && (
+      {deleting && canDelete && (
         <ConfirmDialog
           title="Delete document"
           message={`Remove “${deleting.title}” from the Documents page? Members will no longer see it.`}

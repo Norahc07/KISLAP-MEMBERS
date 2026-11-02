@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { ADMIN_EMAIL, canAccessStaffPage, canSeeTracker, loginEmail } from '../lib/accounts'
+import { ADMIN_EMAIL, canAccessStaffPage, canDoStaffAction, canSeeTracker, loginEmail } from '../lib/accounts'
 
 const AuthContext = createContext(null)
 
@@ -117,6 +117,7 @@ export function AuthProvider({ children }) {
     mustChangePassword,
     canSeeTracker: canSeeTracker(profile, settings, isAdmin, pageAccess),
     canAccessPage: (page) => canAccessStaffPage(page, accessArgs),
+    canDo: (action) => canDoStaffAction(action, accessArgs),
     refreshAccess,
     markPasswordChanged,
     signIn: async (username, password) => {

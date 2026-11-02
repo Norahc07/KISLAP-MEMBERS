@@ -18,7 +18,8 @@ const FILTERS = [
 ]
 
 export default function Assignments() {
-  const { isAdviser } = useAuth()
+  const { isAdviser, canDo } = useAuth()
+  const canWrite = canDo('assign_write')
   const { units, positionsByUnit, membersById, stats, loading, error, reload } = useData()
   const toast = useToast()
   const [query, setQuery] = useState('')
@@ -55,15 +56,15 @@ export default function Assignments() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">{isAdviser ? 'Organization' : 'Step 2'}</p>
-          <h1>{isAdviser ? 'Assigned Roles' : 'Assign Roles'}</h1>
+          <p className="eyebrow">{isAdviser && !canWrite ? 'Organization' : 'Step 2'}</p>
+          <h1>{isAdviser && !canWrite ? 'Assigned Roles' : 'Assign Roles'}</h1>
           <p className="muted">
-            {isAdviser
+            {isAdviser && !canWrite
               ? 'View who holds each role.'
               : `${stats.filled} filled · ${stats.vacant} vacant across ${units.length} groups`}
           </p>
         </div>
-        {!isAdviser && (
+        {canWrite && (
           <div className="header-actions">
             <button className="btn btn-soft" onClick={() => setUnitForm({})}>
               <FolderPlus size={18} /> New committee
@@ -124,7 +125,7 @@ export default function Assignments() {
                   <div className="mini-progress">
                     <div style={{ width: `${all.length ? (filled / all.length) * 100 : 0}%` }} />
                   </div>
-                  {!isAdviser && (
+                  {canWrite && (
                     <div className="unit-actions">
                       <button className="btn btn-soft btn-sm" onClick={() => setPositionForm({ unitId: unit.id })}>
                         <Plus size={15} /> Position
@@ -163,7 +164,7 @@ export default function Assignments() {
                             </div>
                           </div>
                           <span className={`badge level-${p.level}`}>{LEVELS[p.level].label}</span>
-                          {!isAdviser && (
+                          {canWrite && (
                             <>
                               <select
                                 className="input input-sm assign-select"
@@ -215,15 +216,15 @@ export default function Assignments() {
         </div>
       )}
 
-      {positionForm && (
+      {positionForm && canWrite && (
         <PositionForm
           position={positionForm.position}
           unitId={positionForm.unitId}
           onClose={() => setPositionForm(null)}
         />
       )}
-      {unitForm && <UnitForm unit={unitForm.unit} onClose={() => setUnitForm(null)} />}
-      {confirm && (
+      {unitForm && canWrite && <UnitForm unit={unitForm.unit} onClose={() => setUnitForm(null)} />}
+      {confirm && canWrite && (
         <ConfirmDialog
           title={confirm.title}
           message={confirm.message}

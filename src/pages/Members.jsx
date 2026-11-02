@@ -21,7 +21,10 @@ const FILTERS = [
 ]
 
 export default function Members() {
-  const { isAdviser } = useAuth()
+  const { isAdviser, canDo } = useAuth()
+  const canCreate = canDo('members_create')
+  const canUpdate = canDo('members_update')
+  const canDelete = canDo('members_delete')
   const { members, rolesByMember, roster, stats, tracker, loading, error, reload } = useData()
   const toast = useToast()
   const [query, setQuery] = useState('')
@@ -113,7 +116,7 @@ export default function Members() {
               : `${stats.members} members · ${roster.withId} with a membership ID${roster.withoutId ? ` · ${roster.withoutId} without one` : ''}. The list follows membership ID order.`}
           </p>
         </div>
-        {!isAdviser && (
+        {canCreate && (
           <div className="header-actions">
             <button className="btn btn-soft" onClick={() => setBulkOpen(true)}>
               <ListPlus size={18} /> Bulk add
@@ -172,14 +175,18 @@ export default function Members() {
                 role={approved ? 'button' : undefined}
                 tabIndex={approved ? 0 : undefined}
               >
-                {!isAdviser && (
+                {(canUpdate || canDelete) && (
                   <div className="member-actions">
-                    <button className="icon-btn" onClick={() => setEditing(m)} aria-label="Edit">
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" onClick={() => setDeleting(m)} aria-label="Delete">
-                      <Trash2 size={15} />
-                    </button>
+                    {canUpdate && (
+                      <button className="icon-btn" onClick={(event) => { event.stopPropagation(); setEditing(m) }} aria-label="Edit">
+                        <Pencil size={15} />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button className="icon-btn danger" onClick={(event) => { event.stopPropagation(); setDeleting(m) }} aria-label="Delete">
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 )}
                 <Avatar src={m.photo_url} name={m.full_name} size={80} className="ring" />
@@ -200,7 +207,7 @@ export default function Members() {
                       </span>
                     ))}
                   </div>
-                ) : !isAdviser ? (
+                ) : canCreate || canUpdate ? (
                   <span className="badge badge-muted">No role yet</span>
                 ) : null}
               </article>
@@ -211,7 +218,7 @@ export default function Members() {
         <div className="empty">
           <UserPlus size={36} />
           <p>{members.length ? 'No members match your search.' : isAdviser ? 'No members yet.' : 'Start by adding all the members of the organization.'}</p>
-          {!members.length && !isAdviser && (
+          {!members.length && canCreate && (
             <button className="btn btn-primary" onClick={() => setEditing({})}>
               <Plus size={18} /> Add first member
             </button>
@@ -219,9 +226,11 @@ export default function Members() {
         </div>
       )}
 
-      {editing && !isAdviser && <MemberForm member={editing.id ? editing : null} onClose={() => setEditing(null)} />}
-      {bulkOpen && !isAdviser && <BulkAddForm onClose={() => setBulkOpen(false)} />}
-      {deleting && !isAdviser && (
+      {editing && ((editing.id && canUpdate) || (!editing.id && canCreate)) && (
+        <MemberForm member={editing.id ? editing : null} onClose={() => setEditing(null)} />
+      )}
+      {bulkOpen && canCreate && <BulkAddForm onClose={() => setBulkOpen(false)} />}
+      {deleting && canDelete && (
         <ConfirmDialog
           title="Remove member?"
           message={`${deleting.full_name} will be removed. Their membership ID stays open as vacant and can be assigned to a new member. Any position they hold becomes vacant.`}

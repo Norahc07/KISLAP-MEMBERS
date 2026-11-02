@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Search, Shield, Users } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { STAFF_PAGES, TRACKER_ACCESS_ROLES, staffPageLabel } from '../lib/accounts'
+import { STAFF_ACCESS, TRACKER_ACCESS_ROLES, normalizeStaffPermissions, staffPageLabel } from '../lib/accounts'
 import { errorMessage } from '../lib/constants'
 import { TRACKER_ROLES, memberCode } from '../lib/tracker'
 import { useToast } from '../context/ToastContext'
@@ -94,8 +94,24 @@ export default function Settings() {
     setDraftPages([...(pageMap[memberNo] || [])])
   }
 
-  function togglePage(key) {
-    setDraftPages((current) => (current.includes(key) ? current.filter((item) => item !== key) : [...current, key]))
+  function togglePage(pageKey) {
+    setDraftPages((current) => {
+      const page = STAFF_ACCESS.find((item) => item.key === pageKey)
+      const on = current.includes(pageKey)
+      if (on) {
+        const actionKeys = new Set((page?.actions || []).map((action) => action.key))
+        return current.filter((item) => item !== pageKey && !actionKeys.has(item))
+      }
+      return normalizeStaffPermissions([...current, pageKey])
+    })
+  }
+
+  function toggleAction(actionKey, pageKey) {
+    setDraftPages((current) => {
+      const on = current.includes(actionKey)
+      if (on) return normalizeStaffPermissions(current.filter((item) => item !== actionKey))
+      return normalizeStaffPermissions([...current, pageKey, actionKey])
+    })
   }
 
   async function saveRoles(event) {
@@ -110,16 +126,17 @@ export default function Settings() {
     }
     await refreshAccess()
     toast.success('Role tracker access saved.')
-    if (tab === 'list') loadAccessList()
+    loadAccessList()
   }
 
   async function saveMemberPages(event) {
     event.preventDefault()
     if (!selected) return
+    const pages = normalizeStaffPermissions(draftPages)
     setSavingMember(true)
     const { error } = await supabase.rpc('save_staff_page_access', {
       p_member_no: selected,
-      p_pages: draftPages,
+      p_pages: pages,
     })
     setSavingMember(false)
     if (error) {
@@ -130,14 +147,15 @@ export default function Settings() {
       )
       return
     }
+    setDraftPages(pages)
     setPageMap((current) => {
       const next = { ...current }
-      if (draftPages.length) next[selected] = [...draftPages]
+      if (pages.length) next[selected] = [...pages]
       else delete next[selected]
       return next
     })
     await refreshAccess()
-    toast.success(draftPages.length ? 'Page access saved.' : 'Page access removed.')
+    toast.success(pages.length ? 'Access saved.' : 'Access removed.')
     loadAccessList()
   }
 
@@ -155,9 +173,7 @@ export default function Settings() {
       delete next[memberNo]
       return next
     })
-    if (selected === memberNo) {
-      setDraftPages([])
-    }
+    if (selected === memberNo) setDraftPages([])
     await refreshAccess()
     toast.success('Access removed.')
     loadAccessList()
@@ -173,14 +189,14 @@ export default function Settings() {
           <p className="eyebrow">Admin</p>
           <h1>Settings</h1>
           <p className="muted">
-            Offer admin-side pages to members, then review who already has access and which pages they can open.
+            Offer admin pages and CRUD actions to members, then review who already has access.
           </p>
         </div>
       </header>
 
       {setupNeeded && (
         <div className="alert">
-          Run <code>supabase/accounts.sql</code> and <code>supabase/staff-page-access.sql</code> in the Supabase SQL Editor, then refresh.
+          Run <code>supabase/staff-page-access.sql</code> last in the Supabase SQL Editor (after enroll-member / registration-form if you re-run those), then refresh.
         </div>
       )}
 
@@ -198,7 +214,7 @@ export default function Settings() {
           <form className="panel form" onSubmit={saveRoles}>
             <fieldset className="choice-set">
               <legend>Roles that can open Tracker</legend>
-              <p className="muted small">Whole roles get Tracker only. Use the member panel to offer more pages.</p>
+              <p className="muted small">Whole roles get Tracker view only. Use the member panel to offer edit rights or other pages.</p>
               <div className="check-row">
                 {TRACKER_ACCESS_ROLES.map((role) => (
                   <label key={role} className="check">
@@ -216,8 +232,8 @@ export default function Settings() {
           <section className="panel settings-member-access">
             <div className="settings-member-head">
               <div>
-                <h2>Pages for a member</h2>
-                <p className="muted small">Pick a member, choose the admin pages they may open, then save.</p>
+                <h2>Pages and CRUD for a member</h2>
+                <p className="muted small">Pick a member, choose pages and Add / Edit / Delete (or manage) actions, then save.</p>
               </div>
               <div className="search">
                 <Search size={17} />
@@ -243,7 +259,7 @@ export default function Settings() {
                         <strong>{memberCode(row.member_no)}</strong>
                         <span>{row.full_name.trim() || 'No name yet'}</span>
                       </span>
-                      {pages.length ? <em>{pages.length} page{pages.length === 1 ? '' : 's'}</em> : <em className="muted">No access</em>}
+                      {pages.length ? <em>{pages.length} right{pages.length === 1 ? '' : 's'}</em> : <em className="muted">No access</em>}
                     </button>
                   )
                 })}
@@ -258,29 +274,51 @@ export default function Settings() {
                         {memberCode(selectedRow.member_no)} · {selectedRow.full_name.trim() || 'No name yet'}
                       </h3>
                     </div>
-                    <fieldset className="choice-set">
-                      <legend>Pages this member can open</legend>
-                      <div className="check-list settings-page-checks">
-                        {STAFF_PAGES.map((page) => (
-                          <label key={page.key} className="check">
-                            <input type="checkbox" checked={draftPages.includes(page.key)} onChange={() => togglePage(page.key)} />
-                            <span>{page.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
+                    <div className="settings-access-groups">
+                      {STAFF_ACCESS.map((page) => (
+                        <fieldset key={page.key} className="settings-access-group">
+                          <legend>
+                            {page.nav !== false ? (
+                              <label className="check">
+                                <input type="checkbox" checked={draftPages.includes(page.key)} onChange={() => togglePage(page.key)} />
+                                <span>{page.label}</span>
+                              </label>
+                            ) : (
+                              <span>{page.label}</span>
+                            )}
+                          </legend>
+                          {page.note ? <p className="muted small">{page.note}</p> : null}
+                          {page.actions.length ? (
+                            <div className="check-row settings-action-row">
+                              {page.actions.map((action) => (
+                                <label key={action.key} className="check">
+                                  <input
+                                    type="checkbox"
+                                    checked={draftPages.includes(action.key)}
+                                    onChange={() => toggleAction(action.key, page.key)}
+                                  />
+                                  <span>{action.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="muted small">View only</p>
+                          )}
+                        </fieldset>
+                      ))}
+                    </div>
                     <div className="settings-page-actions">
                       <button type="button" className="btn btn-ghost" disabled={savingMember || !draftPages.length} onClick={() => setDraftPages([])}>
-                        Clear pages
+                        Clear all
                       </button>
                       <button type="submit" className="btn btn-primary" disabled={savingMember}>
-                        {savingMember ? 'Saving…' : 'Save page access'}
+                        {savingMember ? 'Saving…' : 'Save access'}
                       </button>
                     </div>
                   </>
                 ) : (
                   <div className="settings-empty">
-                    <p>Select a member on the left to offer admin-side pages.</p>
+                    <p>Select a member on the left to offer pages and CRUD actions.</p>
                   </div>
                 )}
               </form>
@@ -292,11 +330,11 @@ export default function Settings() {
           <div className="settings-member-head">
             <div>
               <h2>Users with access</h2>
-              <p className="muted small">Everyone who can open at least one admin-side page, and which pages they have.</p>
+              <p className="muted small">Everyone with at least one admin page or CRUD right, and what they can do.</p>
             </div>
             <div className="search">
               <Search size={17} />
-              <input placeholder="Search users or pages" value={listQuery} onChange={(event) => setListQuery(event.target.value)} />
+              <input placeholder="Search users or permissions" value={listQuery} onChange={(event) => setListQuery(event.target.value)} />
             </div>
           </div>
 
@@ -304,7 +342,7 @@ export default function Settings() {
             <p className="muted">Loading access list…</p>
           ) : visibleAccess.length === 0 ? (
             <div className="settings-empty">
-              <p>No members have admin-side page access yet.</p>
+              <p>No members have admin-side access yet.</p>
             </div>
           ) : (
             <div className="table-wrap">
@@ -313,7 +351,7 @@ export default function Settings() {
                   <tr>
                     <th>Member</th>
                     <th>Username</th>
-                    <th>Pages</th>
+                    <th>Access</th>
                     <th>Source</th>
                     <th />
                   </tr>

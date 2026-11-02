@@ -4652,6 +4652,37 @@ select.input {
   max-height: none;
 }
 
+.settings-access-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.settings-access-group {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.settings-access-group legend {
+  padding: 0 4px;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.settings-access-group .check {
+  font-weight: 700;
+}
+
+.settings-action-row {
+  margin-top: 8px;
+}
+
 .settings-page-actions {
   display: flex;
   justify-content: flex-end;
@@ -4711,6 +4742,10 @@ select.input {
   .settings-page-actions .btn {
     flex: 1 1 auto;
     justify-content: center;
+  }
+
+  .settings-access-groups {
+    max-height: none;
   }
 
   .access-row-actions {

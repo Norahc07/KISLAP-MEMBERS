@@ -82,6 +82,27 @@ create policy "Admin read registrations"
 revoke all on public.registrations from anon, authenticated;
 grant select on public.registrations to authenticated;
 
+-- Full versions live in staff-page-access.sql; stubs keep this file runnable alone.
+create or replace function public.can_review_registrations()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.is_admin();
+$$;
+
+create or replace function public.can_edit_registrations()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.is_admin();
+$$;
+
 create or replace function public.submit_registration(payload jsonb)
 returns jsonb
 language plpgsql
@@ -243,14 +264,14 @@ begin
     coalesce(payload->>'photo_public_consent', '') = 'true',
     btrim(payload->>'privacy_signature'),
     (payload->>'privacy_date')::date,
-    case when public.is_admin() then nullif(payload->>'date_received', '')::date else null end,
-    case when public.is_admin() then nullif(payload->>'interview_date', '')::date else null end,
-    case when public.is_admin() then nullif(payload->>'application_status', '') else 'pending' end,
-    case when public.is_admin() then nullif(payload->>'interview_assessment', '') else null end,
-    case when public.is_admin() then coalesce(btrim(payload->>'assigned_position'), '') else '' end,
-    case when public.is_admin() then coalesce(btrim(payload->>'remarks'), '') else '' end,
-    case when public.is_admin() then coalesce(btrim(payload->>'reviewed_by'), '') else '' end,
-    case when public.is_admin() then nullif(payload->>'approval_date', '')::date else null end
+    case when public.can_review_registrations() then nullif(payload->>'date_received', '')::date else null end,
+    case when public.can_review_registrations() then nullif(payload->>'interview_date', '')::date else null end,
+    case when public.can_review_registrations() then nullif(payload->>'application_status', '') else 'pending' end,
+    case when public.can_review_registrations() then nullif(payload->>'interview_assessment', '') else null end,
+    case when public.can_review_registrations() then coalesce(btrim(payload->>'assigned_position'), '') else '' end,
+    case when public.can_review_registrations() then coalesce(btrim(payload->>'remarks'), '') else '' end,
+    case when public.can_review_registrations() then coalesce(btrim(payload->>'reviewed_by'), '') else '' end,
+    case when public.can_review_registrations() then nullif(payload->>'approval_date', '')::date else null end
   )
   on conflict (member_no) do update set
     surname = excluded.surname,
@@ -303,27 +324,27 @@ begin
     photo_public_consent = excluded.photo_public_consent,
     privacy_signature = excluded.privacy_signature,
     privacy_date = excluded.privacy_date,
-    date_received = case when public.is_admin() then excluded.date_received else registrations.date_received end,
-    interview_date = case when public.is_admin() then excluded.interview_date else registrations.interview_date end,
+    date_received = case when public.can_review_registrations() then excluded.date_received else registrations.date_received end,
+    interview_date = case when public.can_review_registrations() then excluded.interview_date else registrations.interview_date end,
     application_status = case
-      when public.is_admin() then excluded.application_status
+      when public.can_review_registrations() then excluded.application_status
       when registrations.application_status = 'declined' then 'pending'
       else registrations.application_status
     end,
     interview_assessment = case
-      when public.is_admin() then excluded.interview_assessment
+      when public.can_review_registrations() then excluded.interview_assessment
       when registrations.application_status = 'declined' then null
       else registrations.interview_assessment
     end,
-    assigned_position = case when public.is_admin() then excluded.assigned_position else registrations.assigned_position end,
+    assigned_position = case when public.can_review_registrations() then excluded.assigned_position else registrations.assigned_position end,
     remarks = case
-      when public.is_admin() then excluded.remarks
+      when public.can_review_registrations() then excluded.remarks
       when registrations.application_status = 'declined' then ''
       else registrations.remarks
     end,
-    reviewed_by = case when public.is_admin() then excluded.reviewed_by else registrations.reviewed_by end,
+    reviewed_by = case when public.can_review_registrations() then excluded.reviewed_by else registrations.reviewed_by end,
     approval_date = case
-      when public.is_admin() then excluded.approval_date
+      when public.can_review_registrations() then excluded.approval_date
       when registrations.application_status = 'declined' then null
       else registrations.approval_date
     end,

@@ -1,7 +1,15 @@
--- Per-member admin-side page access.
--- Run once in the Supabase SQL Editor after supabase/accounts.sql.
--- Only the real admin can grant or change these pages.
--- Grantable pages: registrations, members, assign, tracker, users, audit.
+-- Per-member admin-side page + CRUD access.
+-- Run once in the Supabase SQL Editor after supabase/accounts.sql
+-- (and after organization-documents.sql / enroll-member.sql / registration-form.sql if those are already installed).
+-- Only the real admin can grant or change these permissions.
+--
+-- Grantable keys:
+--   documents, documents_create, documents_update, documents_delete
+--   registrations, registrations_edit, registrations_review
+--   members, members_create, members_update, members_delete
+--   assign, assign_write
+--   tracker, tracker_write
+--   users, audit
 
 create table if not exists public.staff_page_access (
   member_no int primary key references public.membership_tracker(member_no) on delete cascade,
@@ -79,6 +87,31 @@ $$;
 
 grant execute on function public.has_page_access(text) to authenticated;
 
+create or replace function public.can_edit_registrations()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.is_admin()
+    or public.has_page_access('registrations_edit')
+    or public.has_page_access('registrations_review');
+$$;
+
+create or replace function public.can_review_registrations()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.is_admin() or public.has_page_access('registrations_review');
+$$;
+
+grant execute on function public.can_edit_registrations() to authenticated;
+grant execute on function public.can_review_registrations() to authenticated;
+
 create or replace function public.save_staff_page_access(p_member_no int, p_pages text[])
 returns void
 language plpgsql
@@ -87,7 +120,14 @@ set search_path = public
 as $$
 declare
   v_pages text[] := coalesce(p_pages, '{}');
-  v_allowed text[] := array['registrations', 'members', 'assign', 'tracker', 'users', 'audit'];
+  v_allowed text[] := array[
+    'documents', 'documents_create', 'documents_update', 'documents_delete',
+    'registrations', 'registrations_edit', 'registrations_review',
+    'members', 'members_create', 'members_update', 'members_delete',
+    'assign', 'assign_write',
+    'tracker', 'tracker_write',
+    'users', 'audit'
+  ];
   v_name text;
 begin
   if not public.is_admin() then
@@ -102,7 +142,7 @@ begin
   if exists (
     select 1 from unnest(v_pages) page where page is null or page <> all(v_allowed)
   ) then
-    raise exception 'Choose only allowed admin pages.';
+    raise exception 'Choose only allowed admin pages and actions.';
   end if;
 
   select full_name into v_name from public.membership_tracker where member_no = p_member_no;
@@ -218,7 +258,7 @@ $$;
 
 grant execute on function public.list_staff_access() to authenticated;
 
--- Allow granted staff to read the pages they were offered.
+-- Registrations read + staff edit ownership
 drop policy if exists "Admin read registrations" on public.registrations;
 drop policy if exists "Staff read registrations" on public.registrations;
 create policy "Staff read registrations" on public.registrations
@@ -232,6 +272,26 @@ create policy "Member reads own registration" on public.registrations
     public.has_page_access('registrations')
     or member_no = (select member_no from public.profiles where id = auth.uid())
   );
+
+create or replace function public.registrations_owner_check()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.can_edit_registrations() then
+    return new;
+  end if;
+  if not exists (
+    select 1 from public.profiles
+    where id = auth.uid() and member_no = new.member_no
+  ) then
+    raise exception 'You can only submit the registration for your own membership ID.';
+  end if;
+  return new;
+end;
+$$;
 
 drop policy if exists "Read profiles" on public.profiles;
 create policy "Read profiles" on public.profiles
@@ -265,3 +325,131 @@ begin
     where s.last_seen > now() - interval '45 seconds';
 end;
 $$;
+
+-- Documents CRUD
+drop policy if exists "Admin write organization documents" on public.organization_documents;
+drop policy if exists "Staff insert organization documents" on public.organization_documents;
+drop policy if exists "Staff update organization documents" on public.organization_documents;
+drop policy if exists "Staff delete organization documents" on public.organization_documents;
+
+create policy "Staff insert organization documents"
+  on public.organization_documents
+  for insert to authenticated
+  with check (public.has_page_access('documents_create'));
+
+create policy "Staff update organization documents"
+  on public.organization_documents
+  for update to authenticated
+  using (public.has_page_access('documents_update'))
+  with check (public.has_page_access('documents_update'));
+
+create policy "Staff delete organization documents"
+  on public.organization_documents
+  for delete to authenticated
+  using (public.has_page_access('documents_delete'));
+
+drop policy if exists "Org documents admin insert" on storage.objects;
+drop policy if exists "Org documents admin update" on storage.objects;
+drop policy if exists "Org documents admin delete" on storage.objects;
+drop policy if exists "Org documents staff insert" on storage.objects;
+drop policy if exists "Org documents staff update" on storage.objects;
+drop policy if exists "Org documents staff delete" on storage.objects;
+
+create policy "Org documents staff insert"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'org-documents' and public.has_page_access('documents_create'));
+
+create policy "Org documents staff update"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'org-documents' and public.has_page_access('documents_update'));
+
+create policy "Org documents staff delete"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'org-documents'
+    and (
+      public.has_page_access('documents_delete')
+      or public.has_page_access('documents_update')
+    )
+  );
+
+-- Members / units / positions / tracker writes
+drop policy if exists "Admin write" on public.members;
+drop policy if exists "Staff insert members" on public.members;
+drop policy if exists "Staff update members" on public.members;
+drop policy if exists "Staff delete members" on public.members;
+
+create policy "Staff insert members"
+  on public.members for insert to authenticated
+  with check (public.has_page_access('members_create'));
+
+create policy "Staff update members"
+  on public.members for update to authenticated
+  using (public.has_page_access('members_update'))
+  with check (public.has_page_access('members_update'));
+
+create policy "Staff delete members"
+  on public.members for delete to authenticated
+  using (public.has_page_access('members_delete'));
+
+drop policy if exists "Admin write" on public.units;
+drop policy if exists "Staff write units" on public.units;
+create policy "Staff write units"
+  on public.units for all to authenticated
+  using (public.has_page_access('assign_write'))
+  with check (public.has_page_access('assign_write'));
+
+drop policy if exists "Admin write" on public.positions;
+drop policy if exists "Staff write positions" on public.positions;
+create policy "Staff write positions"
+  on public.positions for all to authenticated
+  using (public.has_page_access('assign_write'))
+  with check (public.has_page_access('assign_write'));
+
+drop policy if exists "Admin write" on public.membership_tracker;
+drop policy if exists "Staff write tracker" on public.membership_tracker;
+create policy "Staff write tracker"
+  on public.membership_tracker for all to authenticated
+  using (public.has_page_access('tracker_write'))
+  with check (public.has_page_access('tracker_write'));
+
+-- Avatar uploads for member CRUD
+drop policy if exists "Avatar admin insert" on storage.objects;
+drop policy if exists "Avatar admin update" on storage.objects;
+drop policy if exists "Avatar admin delete" on storage.objects;
+drop policy if exists "Avatar staff insert" on storage.objects;
+drop policy if exists "Avatar staff update" on storage.objects;
+drop policy if exists "Avatar staff delete" on storage.objects;
+
+create policy "Avatar staff insert"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'avatars'
+    and (
+      public.has_page_access('members_create')
+      or public.has_page_access('members_update')
+      or name = 'profiles/' || auth.uid()::text || '.jpg'
+    )
+  );
+
+create policy "Avatar staff update"
+  on storage.objects for update to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (
+      public.has_page_access('members_create')
+      or public.has_page_access('members_update')
+      or name = 'profiles/' || auth.uid()::text || '.jpg'
+    )
+  );
+
+create policy "Avatar staff delete"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (
+      public.has_page_access('members_update')
+      or public.has_page_access('members_delete')
+      or name = 'profiles/' || auth.uid()::text || '.jpg'
+    )
+  );
