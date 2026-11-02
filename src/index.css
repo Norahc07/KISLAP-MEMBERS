@@ -192,13 +192,6 @@ code {
   box-shadow: 0 10px 24px -10px rgba(16, 185, 129, 0.7);
 }
 
-.sidebar-footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .user-chip {
   display: flex;
   align-items: center;
@@ -230,6 +223,41 @@ code {
   background: var(--primary-2);
   box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
   flex-shrink: 0;
+}
+
+.account-bar {
+  position: sticky;
+  top: 0;
+  z-index: 28;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: -8px 0 18px;
+  padding: 10px 0 12px;
+  background:
+    linear-gradient(180deg, var(--bg) 0%, var(--bg) 72%, rgba(243, 245, 250, 0) 100%);
+}
+
+.account-chip {
+  max-width: min(280px, 55vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-chip small {
+  color: var(--muted);
+}
+
+.account-chip span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.account-signout {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .mobile-bar,
@@ -2368,6 +2396,12 @@ select.input {
     padding-right: max(14px, env(safe-area-inset-right));
   }
 
+  .account-bar {
+    top: 58px;
+    margin-top: 0;
+    padding-top: 8px;
+  }
+
   .page {
     gap: 18px;
   }
@@ -3650,7 +3684,8 @@ select.input {
   .toast-stack,
   .sidebar,
   .mobile-bar,
-  .sidebar-scrim {
+  .sidebar-scrim,
+  .account-bar {
     display: none !important;
   }
 
@@ -4917,6 +4952,19 @@ select.input {
 @media (max-width: 480px) {
   .main {
     padding: 14px 10px 40px;
+  }
+
+  .account-bar {
+    gap: 8px;
+  }
+
+  .account-chip {
+    max-width: min(180px, 48vw);
+    padding: 8px 10px;
+  }
+
+  .account-signout {
+    padding: 8px 10px;
   }
 
   .mobile-bar .brand small {

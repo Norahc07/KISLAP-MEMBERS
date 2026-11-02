@@ -98,23 +98,22 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+      </aside>
+      {open && <div className="sidebar-scrim" onClick={() => setOpen(false)} />}
 
-        <div className="sidebar-footer">
-          <div className="user-chip">
+      <main className="main">
+        <div className="account-bar">
+          <div className="user-chip account-chip">
             <div className="user-dot" />
             <div>
               <small>Signed in as</small>
               <span>{profile?.username || user?.email}</span>
             </div>
           </div>
-          <button className="btn btn-sidebar" onClick={handleSignOut} disabled={signingOut}>
+          <button type="button" className="btn btn-soft account-signout" onClick={handleSignOut} disabled={signingOut}>
             <LogOut size={17} /> {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </div>
-      </aside>
-      {open && <div className="sidebar-scrim" onClick={() => setOpen(false)} />}
-
-      <main className="main">
         {isAdmin && setupNeeded && (
           <div className="alert">
             Member accounts are not in Supabase yet. Run <code>supabase/accounts.sql</code> in the SQL Editor.
