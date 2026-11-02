@@ -56,6 +56,7 @@ async function loadBirthdaySource() {
 export default function CalendarPage() {
   const today = todayParts()
   const [tab, setTab] = useState('calendar')
+  const [monthFilter, setMonthFilter] = useState(0)
   const [cursor, setCursor] = useState({ year: today.year, month: today.month })
   const [selected, setSelected] = useState(today.iso)
   const [birthdayRows, setBirthdayRows] = useState([])
@@ -83,6 +84,32 @@ export default function CalendarPage() {
     [year, month, birthdayRows],
   )
   const yearBirthdays = useMemo(() => allBirthdaysInYear(year, birthdayRows), [year, birthdayRows])
+
+  const monthCounts = useMemo(() => {
+    const counts = Array.from({ length: 13 }, () => 0)
+    yearBirthdays.forEach((event) => {
+      counts[event.month] += 1
+      counts[0] += 1
+    })
+    return counts
+  }, [yearBirthdays])
+
+  const birthdayGroups = useMemo(() => {
+    const filtered = monthFilter
+      ? yearBirthdays.filter((event) => event.month === monthFilter)
+      : yearBirthdays
+    const groups = []
+    for (let m = 1; m <= 12; m += 1) {
+      const people = filtered.filter((event) => event.month === m)
+      if (!people.length) continue
+      groups.push({
+        month: m,
+        label: MONTH_NAMES[m - 1],
+        people: [...people].sort((a, b) => a.day - b.day || a.name.localeCompare(b.name)),
+      })
+    }
+    return groups
+  }, [yearBirthdays, monthFilter])
 
   const selectedParts = selected?.startsWith(`${year}-${String(month).padStart(2, '0')}`)
     ? selected
@@ -337,9 +364,8 @@ export default function CalendarPage() {
         </div>
       ) : (
         <section className="panel calendar-birthdays-panel">
-          <div className="calendar-side-head">
-            <Cake size={18} />
-            <div>
+          <div className="birthday-hero">
+            <div className="birthday-hero-copy">
               <p className="eyebrow">All birthdays · {year}</p>
               <h2>
                 {loading
@@ -348,7 +374,42 @@ export default function CalendarPage() {
                     ? `${yearBirthdays.length} member${yearBirthdays.length === 1 ? '' : 's'} from eRegForms`
                     : 'No birthdays loaded yet'}
               </h2>
+              <p className="muted">
+                Browse by month, then open anyone on the calendar. Dates come from each approved e-registration form.
+              </p>
             </div>
+            <div className="birthday-hero-stat" aria-hidden="true">
+              <Cake size={28} />
+              <strong>{monthFilter ? monthCounts[monthFilter] : yearBirthdays.length}</strong>
+              <span>{monthFilter ? MONTH_NAMES[monthFilter - 1] : 'All year'}</span>
+            </div>
+          </div>
+
+          <div className="birthday-month-filters" role="toolbar" aria-label="Filter birthdays by month">
+            <button
+              type="button"
+              className={`birthday-month-chip${monthFilter === 0 ? ' active' : ''}`}
+              onClick={() => setMonthFilter(0)}
+            >
+              All
+              <em>{monthCounts[0]}</em>
+            </button>
+            {MONTH_NAMES.map((label, index) => {
+              const value = index + 1
+              const count = monthCounts[value]
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  className={`birthday-month-chip${monthFilter === value ? ' active' : ''}${count ? '' : ' is-empty'}`}
+                  onClick={() => setMonthFilter(value)}
+                  disabled={!count && !loading}
+                >
+                  {label.slice(0, 3)}
+                  <em>{count}</em>
+                </button>
+              )
+            })}
           </div>
 
           {loading ? (
@@ -360,29 +421,44 @@ export default function CalendarPage() {
             <p className="muted calendar-empty">
               Birthdays appear here after members submit their date of birth on the registration form.
             </p>
+          ) : !birthdayGroups.length ? (
+            <p className="muted calendar-empty">No birthdays in {MONTH_NAMES[monthFilter - 1]}.</p>
           ) : (
-            <ul className="calendar-event-list calendar-birthdays-grid">
-              {yearBirthdays.map((event) => (
-                <li key={event.id}>
-                  <button
-                    type="button"
-                    className="calendar-event calendar-event-btn is-birthday"
-                    onClick={() => openBirthdayOnCalendar(event)}
-                  >
-                    <Cake size={16} />
+            <div className="birthday-timeline">
+              {birthdayGroups.map((group) => (
+                <section key={group.month} className="birthday-month-block">
+                  <header className="birthday-month-head">
                     <div>
-                      <strong>{event.name}</strong>
-                      <span>
-                        {MONTH_NAMES[event.month - 1]} {event.day}
-                        {' · '}
-                        {event.code || memberCode(event.memberNo)}
-                        {event.turningAge ? ` · turns ${event.turningAge}` : ''}
-                      </span>
+                      <p className="eyebrow">{String(group.month).padStart(2, '0')}</p>
+                      <h3>{group.label}</h3>
                     </div>
-                  </button>
-                </li>
+                    <span className="birthday-month-count">
+                      {group.people.length} celebrant{group.people.length === 1 ? '' : 's'}
+                    </span>
+                  </header>
+                  <ol className="birthday-month-list">
+                    {group.people.map((event) => (
+                      <li key={event.id}>
+                        <button type="button" className="birthday-row" onClick={() => openBirthdayOnCalendar(event)}>
+                          <span className="birthday-day-badge" aria-hidden="true">
+                            <strong>{event.day}</strong>
+                            <small>{group.label.slice(0, 3)}</small>
+                          </span>
+                          <span className="birthday-row-copy">
+                            <strong>{event.name}</strong>
+                            <span>
+                              {event.code || memberCode(event.memberNo)}
+                              {event.turningAge ? ` · turns ${event.turningAge} in ${year}` : ''}
+                            </span>
+                          </span>
+                          <span className="birthday-row-action">View on calendar</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
         </section>
       )}
