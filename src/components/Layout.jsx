@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, CalendarDays, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 import RegisteredVoterPrompt from './RegisteredVoterPrompt'
@@ -31,10 +31,12 @@ export default function Layout() {
   }, [open])
 
   const documentsLink = { to: '/documents', label: 'Documents', icon: FolderOpen }
+  const calendarLink = { to: '/calendar', label: 'Calendar', icon: CalendarDays }
   const nav = isAdviser
     ? [
         { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
         documentsLink,
+        calendarLink,
         { to: '/account', label: 'My account', icon: UserRound },
         { to: '/members', label: 'Members', icon: Users },
         { to: '/assign', label: 'Assigned Roles', icon: Network },
@@ -42,6 +44,7 @@ export default function Layout() {
     : [
         { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
         documentsLink,
+        calendarLink,
         ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
         { to: '/register', label: 'Registration', icon: FileText },
         ...(canAccessPage('registrations') ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
