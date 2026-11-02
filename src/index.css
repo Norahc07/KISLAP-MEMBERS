@@ -5290,6 +5290,12 @@ select.input {
   filter: brightness(0.98);
 }
 
+.calendar-year-list {
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
 @media (max-width: 960px) {
   .calendar-layout {
     grid-template-columns: 1fr;

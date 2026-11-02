@@ -5,11 +5,53 @@ import { errorMessage } from '../lib/constants'
 import {
   MONTH_NAMES,
   WEEKDAYS,
+  allBirthdaysInYear,
   buildMonthCells,
   monthEventBuckets,
+  normalizeBirthdayRows,
   todayParts,
   upcomingInMonth,
 } from '../lib/calendar'
+import { memberCode } from '../lib/tracker'
+
+async function loadBirthdaySource() {
+  const rpc = await supabase.rpc('list_calendar_birthdays')
+  if (!rpc.error) {
+    const rows = normalizeBirthdayRows(rpc.data || [])
+    if (rows.length) return { rows, source: 'rpc' }
+  }
+
+  // Same source as /registrations Preview — date_of_birth on each eRegForm.
+  const [{ data: registrations, error: regError }, { data: tracker }] = await Promise.all([
+    supabase
+      .from('registrations')
+      .select('member_no, date_of_birth, first_name, middle_name, surname, suffix, application_status')
+      .not('date_of_birth', 'is', null)
+      .order('member_no'),
+    supabase.from('membership_tracker').select('member_no, full_name'),
+  ])
+
+  if (regError) {
+    if (rpc.error) {
+      return {
+        rows: [],
+        error:
+          rpc.error.code === 'PGRST202'
+            ? 'Run supabase/calendar.sql in the Supabase SQL Editor, then refresh.'
+            : errorMessage(rpc.error),
+      }
+    }
+    return { rows: [], error: errorMessage(regError) }
+  }
+
+  const names = new Map((tracker || []).map((row) => [row.member_no, row.full_name]))
+  const merged = (registrations || []).map((row) => ({
+    ...row,
+    full_name: names.get(row.member_no) || null,
+  }))
+
+  return { rows: normalizeBirthdayRows(merged), source: 'registrations' }
+}
 
 export default function CalendarPage() {
   const today = todayParts()
@@ -22,23 +64,12 @@ export default function CalendarPage() {
   useEffect(() => {
     let live = true
     setLoading(true)
-    supabase
-      .rpc('list_calendar_birthdays')
-      .then(({ data, error: queryError }) => {
-        if (!live) return
-        if (queryError) {
-          setError(
-            queryError.code === 'PGRST202'
-              ? 'Run supabase/calendar.sql in the Supabase SQL Editor, then refresh.'
-              : errorMessage(queryError),
-          )
-          setBirthdayRows([])
-        } else {
-          setError('')
-          setBirthdayRows(data || [])
-        }
-        setLoading(false)
-      })
+    loadBirthdaySource().then((result) => {
+      if (!live) return
+      setBirthdayRows(result.rows || [])
+      setError(result.error || '')
+      setLoading(false)
+    })
     return () => {
       live = false
     }
@@ -50,6 +81,7 @@ export default function CalendarPage() {
     () => monthEventBuckets(year, month, birthdayRows),
     [year, month, birthdayRows],
   )
+  const yearBirthdays = useMemo(() => allBirthdaysInYear(year, birthdayRows), [year, birthdayRows])
 
   const selectedParts = selected?.startsWith(`${year}-${String(month).padStart(2, '0')}`)
     ? selected
@@ -81,7 +113,8 @@ export default function CalendarPage() {
           <p className="eyebrow">Organization</p>
           <h1>Calendar</h1>
           <p className="muted">
-            Philippine holidays and member birthdays from e-registration forms. Visible to every signed-in member.
+            Philippine holidays and member birthdays from e-registration forms
+            {birthdayRows.length ? ` · ${birthdayRows.length} birthday${birthdayRows.length === 1 ? '' : 's'} loaded` : ''}.
           </p>
         </div>
         <div className="header-actions">
@@ -251,6 +284,51 @@ export default function CalendarPage() {
                           {MONTH_NAMES[event.month - 1]} {event.day}
                           {event.type === 'birthday' ? ` · ${event.code}` : ''}
                           {event.type === 'birthday' && event.turningAge ? ` · turns ${event.turningAge}` : ''}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="panel calendar-year-panel">
+            <div className="calendar-side-head">
+              <div>
+                <p className="eyebrow">All birthdays · {year}</p>
+                <h2>
+                  {yearBirthdays.length
+                    ? `${yearBirthdays.length} member${yearBirthdays.length === 1 ? '' : 's'} from eRegForms`
+                    : 'No birthdays loaded yet'}
+                </h2>
+              </div>
+            </div>
+
+            {!yearBirthdays.length ? (
+              <p className="muted calendar-empty">
+                Birthdays appear here after members submit their date of birth on the registration form.
+              </p>
+            ) : (
+              <ul className="calendar-event-list calendar-year-list">
+                {yearBirthdays.map((event) => (
+                  <li key={event.id}>
+                    <button
+                      type="button"
+                      className="calendar-event calendar-event-btn is-birthday"
+                      onClick={() => {
+                        setCursor({ year, month: event.month })
+                        setSelected(event.date)
+                      }}
+                    >
+                      <Cake size={16} />
+                      <div>
+                        <strong>{event.name}</strong>
+                        <span>
+                          {MONTH_NAMES[event.month - 1]} {event.day}
+                          {' · '}
+                          {event.code || memberCode(event.memberNo)}
+                          {event.turningAge ? ` · turns ${event.turningAge}` : ''}
                         </span>
                       </div>
                     </button>
