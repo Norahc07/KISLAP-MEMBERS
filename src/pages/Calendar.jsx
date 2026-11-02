@@ -55,6 +55,7 @@ async function loadBirthdaySource() {
 
 export default function CalendarPage() {
   const today = todayParts()
+  const [tab, setTab] = useState('calendar')
   const [cursor, setCursor] = useState({ year: today.year, month: today.month })
   const [selected, setSelected] = useState(today.iso)
   const [birthdayRows, setBirthdayRows] = useState([])
@@ -102,8 +103,15 @@ export default function CalendarPage() {
   }
 
   function goToday() {
+    setTab('calendar')
     setCursor({ year: today.year, month: today.month })
     setSelected(today.iso)
+  }
+
+  function openBirthdayOnCalendar(event) {
+    setCursor({ year, month: event.month })
+    setSelected(event.date)
+    setTab('calendar')
   }
 
   return (
@@ -124,244 +132,260 @@ export default function CalendarPage() {
         </div>
       </header>
 
+      <div className="segmented calendar-tabs" role="tablist" aria-label="Calendar sections">
+        <button type="button" className={tab === 'calendar' ? 'active' : ''} onClick={() => setTab('calendar')} role="tab" aria-selected={tab === 'calendar'}>
+          <CalendarDays size={16} /> Calendar
+        </button>
+        <button type="button" className={tab === 'birthdays' ? 'active' : ''} onClick={() => setTab('birthdays')} role="tab" aria-selected={tab === 'birthdays'}>
+          <Cake size={16} /> Birthdays ({yearBirthdays.length || birthdayRows.length || 0})
+        </button>
+      </div>
+
       {error && <div className="alert">{error}</div>}
 
-      <div className="calendar-layout">
-        <section className="panel calendar-board">
-          <div className="calendar-toolbar">
-            <button type="button" className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
-              <ChevronLeft size={18} />
-            </button>
-            <h2>
-              {MONTH_NAMES[month - 1]} {year}
-            </h2>
-            <button type="button" className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
-              <ChevronRight size={18} />
-            </button>
-          </div>
+      {tab === 'calendar' ? (
+        <div className="calendar-layout">
+          <section className="panel calendar-board">
+            <div className="calendar-toolbar">
+              <button type="button" className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+                <ChevronLeft size={18} />
+              </button>
+              <h2>
+                {MONTH_NAMES[month - 1]} {year}
+              </h2>
+              <button type="button" className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
+                <ChevronRight size={18} />
+              </button>
+            </div>
 
-          <div className="calendar-legend">
-            <span className="calendar-legend-item is-holiday">
-              <PartyPopper size={14} /> PH holiday
-            </span>
-            <span className="calendar-legend-item is-quezon">
-              <PartyPopper size={14} /> Quezon
-            </span>
-            <span className="calendar-legend-item is-festival">
-              <PartyPopper size={14} /> Festival
-            </span>
-            <span className="calendar-legend-item is-birthday">
-              <Cake size={14} /> Birthday
-            </span>
-          </div>
+            <div className="calendar-legend">
+              <span className="calendar-legend-item is-holiday">
+                <PartyPopper size={14} /> PH holiday
+              </span>
+              <span className="calendar-legend-item is-quezon">
+                <PartyPopper size={14} /> Quezon
+              </span>
+              <span className="calendar-legend-item is-festival">
+                <PartyPopper size={14} /> Festival
+              </span>
+              <span className="calendar-legend-item is-birthday">
+                <Cake size={14} /> Birthday
+              </span>
+            </div>
 
-          <div className="calendar-weekdays">
-            {WEEKDAYS.map((label) => (
-              <span key={label}>{label}</span>
-            ))}
+            <div className="calendar-weekdays">
+              {WEEKDAYS.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+
+            {loading ? (
+              <div className="calendar-loading">
+                <div className="spinner" />
+                <p className="muted">Loading calendar…</p>
+              </div>
+            ) : (
+              <div className="calendar-grid">
+                {cells.map((cell, index) => {
+                  if (!cell) return <div key={`empty-${index}`} className="calendar-cell is-empty" />
+                  const bucket = byDate[cell.iso] || { holidays: [], birthdays: [] }
+                  const hasNational = bucket.holidays.some((event) => event.kind === 'regular' || event.kind === 'special')
+                  const hasQuezon = bucket.holidays.some((event) => event.kind === 'quezon')
+                  const hasFestival = bucket.holidays.some((event) => event.kind === 'festival')
+                  const hasBirthday = bucket.birthdays.length > 0
+                  const isToday = cell.iso === today.iso
+                  const isSelected = cell.iso === selected
+                  return (
+                    <button
+                      key={cell.iso}
+                      type="button"
+                      className={`calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${hasNational || hasQuezon || hasFestival ? ' has-holiday' : ''}${hasBirthday ? ' has-birthday' : ''}`}
+                      onClick={() => setSelected(cell.iso)}
+                    >
+                      <span className="calendar-day-num">{cell.day}</span>
+                      <span className="calendar-dots">
+                        {hasNational ? <i className="calendar-dot holiday" /> : null}
+                        {hasQuezon ? <i className="calendar-dot quezon" /> : null}
+                        {hasFestival ? <i className="calendar-dot festival" /> : null}
+                        {hasBirthday ? <i className="calendar-dot birthday" /> : null}
+                      </span>
+                      <span className="calendar-cell-labels">
+                        {bucket.holidays.slice(0, 1).map((event) => (
+                          <em key={event.id} className={`is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
+                            {event.name}
+                          </em>
+                        ))}
+                        {bucket.birthdays.slice(0, 1).map((event) => (
+                          <em key={event.id} className="is-birthday">
+                            {event.name.split(' ')[0]}
+                          </em>
+                        ))}
+                        {bucket.holidays.length + bucket.birthdays.length > 1 ? (
+                          <em className="is-more">+{bucket.holidays.length + bucket.birthdays.length - 1}</em>
+                        ) : null}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <aside className="calendar-side">
+            <section className="panel calendar-day-panel">
+              <div className="calendar-side-head">
+                <CalendarDays size={18} />
+                <div>
+                  <p className="eyebrow">Selected day</p>
+                  <h2>
+                    {selected
+                      ? new Date(`${selected}T12:00:00`).toLocaleDateString(undefined, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : 'Pick a day'}
+                  </h2>
+                </div>
+              </div>
+
+              {!selectedEvents.holidays.length && !selectedEvents.birthdays.length ? (
+                <p className="muted calendar-empty">No holidays or birthdays on this day.</p>
+              ) : (
+                <ul className="calendar-event-list">
+                  {selectedEvents.holidays.map((event) => (
+                    <li key={event.id} className={`calendar-event is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
+                      <PartyPopper size={16} />
+                      <div>
+                        <strong>{event.name}</strong>
+                        <span>
+                          {event.label || 'Holiday'}
+                          {event.place ? ` · ${event.place}` : ''}
+                          {event.note ? ` · ${event.note}` : ''}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                  {selectedEvents.birthdays.map((event) => (
+                    <li key={event.id} className="calendar-event is-birthday">
+                      <Cake size={16} />
+                      <div>
+                        <strong>{event.name}</strong>
+                        <span>
+                          {event.code}
+                          {event.turningAge ? ` · turns ${event.turningAge}` : ''}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="panel calendar-month-panel">
+              <div className="calendar-side-head">
+                <div>
+                  <p className="eyebrow">This month</p>
+                  <h2>
+                    {holidays.length} event{holidays.length === 1 ? '' : 's'} · {birthdays.length} birthday
+                    {birthdays.length === 1 ? '' : 's'}
+                  </h2>
+                </div>
+              </div>
+
+              {!upcoming.length ? (
+                <p className="muted calendar-empty">
+                  {year === today.year && month === today.month
+                    ? 'No more holidays or birthdays left this month.'
+                    : 'No holidays or birthdays this month.'}
+                </p>
+              ) : (
+                <ul className="calendar-event-list">
+                  {upcoming.map((event) => (
+                    <li key={event.id}>
+                      <button
+                        type="button"
+                        className={`calendar-event calendar-event-btn ${
+                          event.type === 'birthday'
+                            ? 'is-birthday'
+                            : event.kind === 'festival'
+                              ? 'is-festival'
+                              : event.kind === 'quezon'
+                                ? 'is-quezon'
+                                : 'is-holiday'
+                        }`}
+                        onClick={() => setSelected(event.date)}
+                      >
+                        {event.type === 'holiday' ? <PartyPopper size={16} /> : <Cake size={16} />}
+                        <div>
+                          <strong>{event.name}</strong>
+                          <span>
+                            {MONTH_NAMES[event.month - 1]} {event.day}
+                            {event.type === 'birthday' ? ` · ${event.code}` : ''}
+                            {event.type === 'birthday' && event.turningAge ? ` · turns ${event.turningAge}` : ''}
+                            {event.place ? ` · ${event.place}` : ''}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </aside>
+        </div>
+      ) : (
+        <section className="panel calendar-birthdays-panel">
+          <div className="calendar-side-head">
+            <Cake size={18} />
+            <div>
+              <p className="eyebrow">All birthdays · {year}</p>
+              <h2>
+                {loading
+                  ? 'Loading birthdays…'
+                  : yearBirthdays.length
+                    ? `${yearBirthdays.length} member${yearBirthdays.length === 1 ? '' : 's'} from eRegForms`
+                    : 'No birthdays loaded yet'}
+              </h2>
+            </div>
           </div>
 
           {loading ? (
             <div className="calendar-loading">
               <div className="spinner" />
-              <p className="muted">Loading calendar…</p>
+              <p className="muted">Loading birthdays…</p>
             </div>
+          ) : !yearBirthdays.length ? (
+            <p className="muted calendar-empty">
+              Birthdays appear here after members submit their date of birth on the registration form.
+            </p>
           ) : (
-            <div className="calendar-grid">
-              {cells.map((cell, index) => {
-                if (!cell) return <div key={`empty-${index}`} className="calendar-cell is-empty" />
-                const bucket = byDate[cell.iso] || { holidays: [], birthdays: [] }
-                const hasNational = bucket.holidays.some((event) => event.kind === 'regular' || event.kind === 'special')
-                const hasQuezon = bucket.holidays.some((event) => event.kind === 'quezon')
-                const hasFestival = bucket.holidays.some((event) => event.kind === 'festival')
-                const hasBirthday = bucket.birthdays.length > 0
-                const isToday = cell.iso === today.iso
-                const isSelected = cell.iso === selected
-                return (
+            <ul className="calendar-event-list calendar-birthdays-grid">
+              {yearBirthdays.map((event) => (
+                <li key={event.id}>
                   <button
-                    key={cell.iso}
                     type="button"
-                    className={`calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${hasNational || hasQuezon || hasFestival ? ' has-holiday' : ''}${hasBirthday ? ' has-birthday' : ''}`}
-                    onClick={() => setSelected(cell.iso)}
+                    className="calendar-event calendar-event-btn is-birthday"
+                    onClick={() => openBirthdayOnCalendar(event)}
                   >
-                    <span className="calendar-day-num">{cell.day}</span>
-                    <span className="calendar-dots">
-                      {hasNational ? <i className="calendar-dot holiday" /> : null}
-                      {hasQuezon ? <i className="calendar-dot quezon" /> : null}
-                      {hasFestival ? <i className="calendar-dot festival" /> : null}
-                      {hasBirthday ? <i className="calendar-dot birthday" /> : null}
-                    </span>
-                    <span className="calendar-cell-labels">
-                      {bucket.holidays.slice(0, 1).map((event) => (
-                        <em key={event.id} className={`is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
-                          {event.name}
-                        </em>
-                      ))}
-                      {bucket.birthdays.slice(0, 1).map((event) => (
-                        <em key={event.id} className="is-birthday">
-                          {event.name.split(' ')[0]}
-                        </em>
-                      ))}
-                      {bucket.holidays.length + bucket.birthdays.length > 1 ? (
-                        <em className="is-more">+{bucket.holidays.length + bucket.birthdays.length - 1}</em>
-                      ) : null}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        <aside className="calendar-side">
-          <section className="panel calendar-day-panel">
-            <div className="calendar-side-head">
-              <CalendarDays size={18} />
-              <div>
-                <p className="eyebrow">Selected day</p>
-                <h2>
-                  {selected
-                    ? new Date(`${selected}T12:00:00`).toLocaleDateString(undefined, {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : 'Pick a day'}
-                </h2>
-              </div>
-            </div>
-
-            {!selectedEvents.holidays.length && !selectedEvents.birthdays.length ? (
-              <p className="muted calendar-empty">No holidays or birthdays on this day.</p>
-            ) : (
-              <ul className="calendar-event-list">
-                {selectedEvents.holidays.map((event) => (
-                  <li key={event.id} className={`calendar-event is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
-                    <PartyPopper size={16} />
-                    <div>
-                      <strong>{event.name}</strong>
-                      <span>
-                        {event.label || 'Holiday'}
-                        {event.place ? ` · ${event.place}` : ''}
-                        {event.note ? ` · ${event.note}` : ''}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-                {selectedEvents.birthdays.map((event) => (
-                  <li key={event.id} className="calendar-event is-birthday">
                     <Cake size={16} />
                     <div>
                       <strong>{event.name}</strong>
                       <span>
-                        {event.code}
+                        {MONTH_NAMES[event.month - 1]} {event.day}
+                        {' · '}
+                        {event.code || memberCode(event.memberNo)}
                         {event.turningAge ? ` · turns ${event.turningAge}` : ''}
                       </span>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="panel calendar-month-panel">
-            <div className="calendar-side-head">
-              <div>
-                <p className="eyebrow">This month</p>
-                <h2>
-                  {holidays.length} event{holidays.length === 1 ? '' : 's'} · {birthdays.length} birthday
-                  {birthdays.length === 1 ? '' : 's'}
-                </h2>
-              </div>
-            </div>
-
-            {!upcoming.length ? (
-              <p className="muted calendar-empty">
-                {year === today.year && month === today.month
-                  ? 'No more holidays or birthdays left this month.'
-                  : 'No holidays or birthdays this month.'}
-              </p>
-            ) : (
-              <ul className="calendar-event-list">
-                {upcoming.map((event) => (
-                  <li key={event.id}>
-                    <button
-                      type="button"
-                      className={`calendar-event calendar-event-btn ${
-                        event.type === 'birthday'
-                          ? 'is-birthday'
-                          : event.kind === 'festival'
-                            ? 'is-festival'
-                            : event.kind === 'quezon'
-                              ? 'is-quezon'
-                              : 'is-holiday'
-                      }`}
-                      onClick={() => setSelected(event.date)}
-                    >
-                      {event.type === 'holiday' ? <PartyPopper size={16} /> : <Cake size={16} />}
-                      <div>
-                        <strong>{event.name}</strong>
-                        <span>
-                          {MONTH_NAMES[event.month - 1]} {event.day}
-                          {event.type === 'birthday' ? ` · ${event.code}` : ''}
-                          {event.type === 'birthday' && event.turningAge ? ` · turns ${event.turningAge}` : ''}
-                          {event.place ? ` · ${event.place}` : ''}
-                        </span>
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="panel calendar-year-panel">
-            <div className="calendar-side-head">
-              <div>
-                <p className="eyebrow">All birthdays · {year}</p>
-                <h2>
-                  {yearBirthdays.length
-                    ? `${yearBirthdays.length} member${yearBirthdays.length === 1 ? '' : 's'} from eRegForms`
-                    : 'No birthdays loaded yet'}
-                </h2>
-              </div>
-            </div>
-
-            {!yearBirthdays.length ? (
-              <p className="muted calendar-empty">
-                Birthdays appear here after members submit their date of birth on the registration form.
-              </p>
-            ) : (
-              <ul className="calendar-event-list calendar-year-list">
-                {yearBirthdays.map((event) => (
-                  <li key={event.id}>
-                    <button
-                      type="button"
-                      className="calendar-event calendar-event-btn is-birthday"
-                      onClick={() => {
-                        setCursor({ year, month: event.month })
-                        setSelected(event.date)
-                      }}
-                    >
-                      <Cake size={16} />
-                      <div>
-                        <strong>{event.name}</strong>
-                        <span>
-                          {MONTH_NAMES[event.month - 1]} {event.day}
-                          {' · '}
-                          {event.code || memberCode(event.memberNo)}
-                          {event.turningAge ? ` · turns ${event.turningAge}` : ''}
-                        </span>
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
-      </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   )
 }

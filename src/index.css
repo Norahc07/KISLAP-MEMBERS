@@ -167,9 +167,47 @@ code {
   gap: 4px;
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.28) var(--sidebar);
+}
+
+.nav::-webkit-scrollbar {
+  width: 8px;
+  height: 0;
+}
+
+.nav::-webkit-scrollbar:horizontal {
+  display: none;
+  height: 0;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: var(--sidebar);
+  border-radius: 999px;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  border: 2px solid var(--sidebar);
+}
+
+.nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.42);
+}
+
+.nav::-webkit-scrollbar-corner {
+  background: var(--sidebar);
+}
+
+.nav-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-link {
@@ -5310,10 +5348,30 @@ select.input {
   filter: brightness(0.98);
 }
 
-.calendar-year-list {
-  max-height: 420px;
-  overflow: auto;
-  padding-right: 2px;
+.calendar-tabs {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.calendar-birthdays-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.calendar-birthdays-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  max-height: none;
+}
+
+.calendar-birthdays-grid > li {
+  min-width: 0;
+}
+
+.calendar-birthdays-grid .calendar-event {
+  height: 100%;
 }
 
 @media (max-width: 960px) {
