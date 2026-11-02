@@ -113,7 +113,7 @@ export default function CalendarPage() {
           <p className="eyebrow">Organization</p>
           <h1>Calendar</h1>
           <p className="muted">
-            Philippine holidays and member birthdays from e-registration forms
+            Philippine and Quezon Province holidays, local festivals, and member birthdays from e-registration forms
             {birthdayRows.length ? ` · ${birthdayRows.length} birthday${birthdayRows.length === 1 ? '' : 's'} loaded` : ''}.
           </p>
         </div>
@@ -142,7 +142,13 @@ export default function CalendarPage() {
 
           <div className="calendar-legend">
             <span className="calendar-legend-item is-holiday">
-              <PartyPopper size={14} /> Holiday
+              <PartyPopper size={14} /> PH holiday
+            </span>
+            <span className="calendar-legend-item is-quezon">
+              <PartyPopper size={14} /> Quezon
+            </span>
+            <span className="calendar-legend-item is-festival">
+              <PartyPopper size={14} /> Festival
             </span>
             <span className="calendar-legend-item is-birthday">
               <Cake size={14} /> Birthday
@@ -165,7 +171,9 @@ export default function CalendarPage() {
               {cells.map((cell, index) => {
                 if (!cell) return <div key={`empty-${index}`} className="calendar-cell is-empty" />
                 const bucket = byDate[cell.iso] || { holidays: [], birthdays: [] }
-                const hasHoliday = bucket.holidays.length > 0
+                const hasNational = bucket.holidays.some((event) => event.kind === 'regular' || event.kind === 'special')
+                const hasQuezon = bucket.holidays.some((event) => event.kind === 'quezon')
+                const hasFestival = bucket.holidays.some((event) => event.kind === 'festival')
                 const hasBirthday = bucket.birthdays.length > 0
                 const isToday = cell.iso === today.iso
                 const isSelected = cell.iso === selected
@@ -173,17 +181,19 @@ export default function CalendarPage() {
                   <button
                     key={cell.iso}
                     type="button"
-                    className={`calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${hasHoliday ? ' has-holiday' : ''}${hasBirthday ? ' has-birthday' : ''}`}
+                    className={`calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${hasNational || hasQuezon || hasFestival ? ' has-holiday' : ''}${hasBirthday ? ' has-birthday' : ''}`}
                     onClick={() => setSelected(cell.iso)}
                   >
                     <span className="calendar-day-num">{cell.day}</span>
                     <span className="calendar-dots">
-                      {hasHoliday ? <i className="calendar-dot holiday" /> : null}
+                      {hasNational ? <i className="calendar-dot holiday" /> : null}
+                      {hasQuezon ? <i className="calendar-dot quezon" /> : null}
+                      {hasFestival ? <i className="calendar-dot festival" /> : null}
                       {hasBirthday ? <i className="calendar-dot birthday" /> : null}
                     </span>
                     <span className="calendar-cell-labels">
                       {bucket.holidays.slice(0, 1).map((event) => (
-                        <em key={event.id} className="is-holiday">
+                        <em key={event.id} className={`is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
                           {event.name}
                         </em>
                       ))}
@@ -227,11 +237,15 @@ export default function CalendarPage() {
             ) : (
               <ul className="calendar-event-list">
                 {selectedEvents.holidays.map((event) => (
-                  <li key={event.id} className="calendar-event is-holiday">
+                  <li key={event.id} className={`calendar-event is-${event.kind === 'festival' ? 'festival' : event.kind === 'quezon' ? 'quezon' : 'holiday'}`}>
                     <PartyPopper size={16} />
                     <div>
                       <strong>{event.name}</strong>
-                      <span>{event.kind === 'regular' ? 'Regular holiday' : 'Special non-working day'}</span>
+                      <span>
+                        {event.label || 'Holiday'}
+                        {event.place ? ` · ${event.place}` : ''}
+                        {event.note ? ` · ${event.note}` : ''}
+                      </span>
                     </div>
                   </li>
                 ))}
@@ -256,7 +270,7 @@ export default function CalendarPage() {
               <div>
                 <p className="eyebrow">This month</p>
                 <h2>
-                  {holidays.length} holiday{holidays.length === 1 ? '' : 's'} · {birthdays.length} birthday
+                  {holidays.length} event{holidays.length === 1 ? '' : 's'} · {birthdays.length} birthday
                   {birthdays.length === 1 ? '' : 's'}
                 </h2>
               </div>
@@ -274,7 +288,15 @@ export default function CalendarPage() {
                   <li key={event.id}>
                     <button
                       type="button"
-                      className={`calendar-event calendar-event-btn ${event.type === 'holiday' ? 'is-holiday' : 'is-birthday'}`}
+                      className={`calendar-event calendar-event-btn ${
+                        event.type === 'birthday'
+                          ? 'is-birthday'
+                          : event.kind === 'festival'
+                            ? 'is-festival'
+                            : event.kind === 'quezon'
+                              ? 'is-quezon'
+                              : 'is-holiday'
+                      }`}
                       onClick={() => setSelected(event.date)}
                     >
                       {event.type === 'holiday' ? <PartyPopper size={16} /> : <Cake size={16} />}
@@ -284,6 +306,7 @@ export default function CalendarPage() {
                           {MONTH_NAMES[event.month - 1]} {event.day}
                           {event.type === 'birthday' ? ` · ${event.code}` : ''}
                           {event.type === 'birthday' && event.turningAge ? ` · turns ${event.turningAge}` : ''}
+                          {event.place ? ` · ${event.place}` : ''}
                         </span>
                       </div>
                     </button>

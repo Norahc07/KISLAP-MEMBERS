@@ -5075,6 +5075,14 @@ select.input {
   color: #b45309;
 }
 
+.calendar-legend-item.is-quezon {
+  color: #1d4ed8;
+}
+
+.calendar-legend-item.is-festival {
+  color: #7c2d12;
+}
+
 .calendar-legend-item.is-birthday {
   color: #047857;
 }
@@ -5158,6 +5166,14 @@ select.input {
   background: #d97706;
 }
 
+.calendar-dot.quezon {
+  background: #2563eb;
+}
+
+.calendar-dot.festival {
+  background: #c2410c;
+}
+
 .calendar-dot.birthday {
   background: #059669;
 }
@@ -5183,6 +5199,14 @@ select.input {
 
 .calendar-cell-labels em.is-holiday {
   color: #b45309;
+}
+
+.calendar-cell-labels em.is-quezon {
+  color: #1d4ed8;
+}
+
+.calendar-cell-labels em.is-festival {
+  color: #9a3412;
 }
 
 .calendar-cell-labels em.is-birthday {
@@ -5256,6 +5280,18 @@ select.input {
   color: #92400e;
   background: #fff7ed;
   border-color: #fed7aa;
+}
+
+.calendar-event.is-quezon {
+  color: #1e3a8a;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.calendar-event.is-festival {
+  color: #7c2d12;
+  background: #fff7ed;
+  border-color: #fdba74;
 }
 
 .calendar-event.is-birthday {
