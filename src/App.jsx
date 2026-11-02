@@ -48,9 +48,9 @@ function RequireAdmin({ children }) {
   return children
 }
 
-function RequireOrgStaff({ children }) {
-  const { isAdmin, isAdviser } = useAuth()
-  if (!isAdmin && !isAdviser) return <Navigate to="/account" replace />
+function RequirePage({ page, children }) {
+  const { canAccessPage } = useAuth()
+  if (!canAccessPage(page)) return <Navigate to="/account" replace />
   return children
 }
 
@@ -58,12 +58,6 @@ function MemberRegister() {
   const { isAdviser } = useAuth()
   if (isAdviser) return <Navigate to="/" replace />
   return <Register />
-}
-
-function RequireTracker({ children }) {
-  const { canSeeTracker } = useAuth()
-  if (!canSeeTracker) return <Navigate to="/account" replace />
-  return children
 }
 
 function MemberAccount() {
@@ -122,41 +116,41 @@ export default function App() {
         <Route
           path="registrations"
           element={
-            <RequireAdmin>
+            <RequirePage page="registrations">
               <Registrations />
-            </RequireAdmin>
+            </RequirePage>
           }
         />
         <Route
           path="members"
           element={
-            <RequireOrgStaff>
+            <RequirePage page="members">
               <Members />
-            </RequireOrgStaff>
+            </RequirePage>
           }
         />
         <Route
           path="assign"
           element={
-            <RequireOrgStaff>
+            <RequirePage page="assign">
               <Assignments />
-            </RequireOrgStaff>
+            </RequirePage>
           }
         />
         <Route
           path="tracker"
           element={
-            <RequireTracker>
+            <RequirePage page="tracker">
               <Tracker />
-            </RequireTracker>
+            </RequirePage>
           }
         />
         <Route
           path="users"
           element={
-            <RequireAdmin>
+            <RequirePage page="users">
               <Users />
-            </RequireAdmin>
+            </RequirePage>
           }
         />
         <Route
@@ -170,9 +164,9 @@ export default function App() {
         <Route
           path="audit"
           element={
-            <RequireAdmin>
+            <RequirePage page="audit">
               <AuditLog />
-            </RequireAdmin>
+            </RequirePage>
           }
         />
       </Route>

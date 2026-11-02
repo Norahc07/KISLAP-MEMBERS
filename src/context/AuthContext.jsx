@@ -1,19 +1,33 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { ADMIN_EMAIL, canSeeTracker, loginEmail } from '../lib/accounts'
+import { ADMIN_EMAIL, canAccessStaffPage, canSeeTracker, loginEmail } from '../lib/accounts'
 
 const AuthContext = createContext(null)
 
 async function loadAccess(session) {
-  if (!session) return { profile: null, settings: null, setupNeeded: false }
+  if (!session) return { profile: null, settings: null, pageAccess: [], setupNeeded: false }
   const [profileResult, settingsResult] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
     supabase.from('app_settings').select('*').eq('id', 1).maybeSingle(),
   ])
   const missing = profileResult.error?.code === 'PGRST205' || settingsResult.error?.code === 'PGRST205'
+  const profile = profileResult.data || null
+  let pageAccess = []
+  if (profile?.member_no) {
+    const pagesResult = await supabase
+      .from('staff_page_access')
+      .select('pages')
+      .eq('member_no', profile.member_no)
+      .maybeSingle()
+    if (pagesResult.error?.code === 'PGRST205') {
+      return { profile, settings: settingsResult.data || null, pageAccess: [], setupNeeded: true }
+    }
+    pageAccess = pagesResult.data?.pages || []
+  }
   return {
-    profile: profileResult.data || null,
+    profile,
     settings: settingsResult.data || null,
+    pageAccess,
     setupNeeded: missing,
   }
 }
@@ -22,6 +36,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [settings, setSettings] = useState(null)
+  const [pageAccess, setPageAccess] = useState([])
   const [setupNeeded, setSetupNeeded] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -30,6 +45,7 @@ export function AuthProvider({ children }) {
     const access = await loadAccess(next)
     setProfile(access.profile)
     setSettings(access.settings)
+    setPageAccess(access.pageAccess)
     setSetupNeeded(access.setupNeeded)
   }
 
@@ -53,6 +69,7 @@ export function AuthProvider({ children }) {
     const access = await loadAccess(session)
     setProfile(access.profile)
     setSettings(access.settings)
+    setPageAccess(access.pageAccess)
     setSetupNeeded(access.setupNeeded)
   }
 
@@ -83,19 +100,23 @@ export function AuthProvider({ children }) {
 
   const user = session?.user ?? null
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL || profile?.role === 'admin'
+  const isAdviser = profile?.role === 'adviser'
   const mustChangePassword = Boolean(profile?.must_change_password)
+  const accessArgs = { isAdmin, isAdviser, profile, settings, pageAccess }
 
   const value = {
     session,
     user,
     profile,
     settings,
+    pageAccess,
     setupNeeded,
     ready,
     isAdmin,
-    isAdviser: profile?.role === 'adviser',
+    isAdviser,
     mustChangePassword,
-    canSeeTracker: canSeeTracker(profile, settings, isAdmin),
+    canSeeTracker: canSeeTracker(profile, settings, isAdmin, pageAccess),
+    canAccessPage: (page) => canAccessStaffPage(page, accessArgs),
     refreshAccess,
     markPasswordChanged,
     signIn: async (username, password) => {
@@ -122,6 +143,7 @@ export function AuthProvider({ children }) {
       setSession(null)
       setProfile(null)
       setSettings(null)
+      setPageAccess([])
       try {
         await Promise.race([
           supabase.auth.signOut({ scope: 'local' }),

@@ -6,7 +6,7 @@ import Logo from './Logo'
 import RegisteredVoterPrompt from './RegisteredVoterPrompt'
 
 export default function Layout() {
-  const { user, profile, signOut, isAdmin, isAdviser, canSeeTracker, setupNeeded } = useAuth()
+  const { user, profile, signOut, isAdmin, isAdviser, canAccessPage, setupNeeded } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -44,21 +44,13 @@ export default function Layout() {
         documentsLink,
         ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),
         { to: '/register', label: 'Registration', icon: FileText },
-        ...(isAdmin ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
-        ...(isAdmin
-          ? [
-              { to: '/members', label: 'Members', icon: Users },
-              { to: '/assign', label: 'Assign Roles', icon: Network },
-              { to: '/users', label: 'Users', icon: IdCard },
-            ]
-          : []),
-        ...(canSeeTracker ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
-        ...(isAdmin
-          ? [
-              { to: '/settings', label: 'Settings', icon: Settings },
-              { to: '/audit', label: 'Audit log', icon: ScrollText },
-            ]
-          : []),
+        ...(canAccessPage('registrations') ? [{ to: '/registrations', label: 'eRegForms', icon: ClipboardList }] : []),
+        ...(canAccessPage('members') ? [{ to: '/members', label: 'Members', icon: Users }] : []),
+        ...(canAccessPage('assign') ? [{ to: '/assign', label: 'Assign Roles', icon: Network }] : []),
+        ...(canAccessPage('users') ? [{ to: '/users', label: 'Users', icon: IdCard }] : []),
+        ...(canAccessPage('tracker') ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
+        ...(isAdmin ? [{ to: '/settings', label: 'Settings', icon: Settings }] : []),
+        ...(canAccessPage('audit') ? [{ to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
       ]
 
   function handleSignOut() {
