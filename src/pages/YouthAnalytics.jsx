@@ -212,6 +212,11 @@ export default function YouthAnalytics() {
 
   const barangayRows = useMemo(() => {
     const byName = new Map(barangayStats.map((row) => [row.barangay, row]))
+    const upcomingByBarangay = new Map()
+    for (const profile of rows) {
+      if (!isUpcomingSkVoter(profile) || !profile.barangay) continue
+      upcomingByBarangay.set(profile.barangay, (upcomingByBarangay.get(profile.barangay) || 0) + 1)
+    }
     return MAUBAN_BARANGAYS.map((name) => {
       const row = byName.get(name)
       return {
@@ -219,21 +224,51 @@ export default function YouthAnalytics() {
         total: row?.total || 0,
         interested_to_join: row?.interested_to_join || row?.volunteer_yes || 0,
         official_members: row?.official_members || 0,
-        contact_opt_in_yes: row?.contact_opt_in_yes || 0,
         pwd_yes: row?.pwd_yes || 0,
+        upcoming_sk: upcomingByBarangay.get(name) || 0,
       }
-    }).sort((a, b) => b.total - a.total || a.barangay.localeCompare(b.barangay))
-  }, [barangayStats])
+    }).sort(
+      (a, b) =>
+        b.interested_to_join + b.official_members + b.pwd_yes + b.upcoming_sk -
+          (a.interested_to_join + a.official_members + a.pwd_yes + a.upcoming_sk) ||
+        a.barangay.localeCompare(b.barangay),
+    )
+  }, [barangayStats, rows])
+
+  const barangayTotals = useMemo(
+    () =>
+      barangayRows.reduce(
+        (sum, row) => ({
+          interested_to_join: sum.interested_to_join + Number(row.interested_to_join || 0),
+          official_members: sum.official_members + Number(row.official_members || 0),
+          pwd_yes: sum.pwd_yes + Number(row.pwd_yes || 0),
+          upcoming_sk: sum.upcoming_sk + Number(row.upcoming_sk || 0),
+        }),
+        { interested_to_join: 0, official_members: 0, pwd_yes: 0, upcoming_sk: 0 },
+      ),
+    [barangayRows],
+  )
 
   function exportSummary() {
-    const csv = toCsv(barangayRows, [
-      { key: 'barangay', label: 'Barangay' },
-      { key: 'total', label: 'Total' },
-      { key: 'interested_to_join', label: 'Interested to Join' },
-      { key: 'official_members', label: 'Member' },
-      { key: 'contact_opt_in_yes', label: 'Contact opt-in' },
-      { key: 'pwd_yes', label: 'PWD yes' },
-    ])
+    const csv = toCsv(
+      [
+        ...barangayRows,
+        {
+          barangay: 'TOTAL',
+          interested_to_join: barangayTotals.interested_to_join,
+          official_members: barangayTotals.official_members,
+          pwd_yes: barangayTotals.pwd_yes,
+          upcoming_sk: barangayTotals.upcoming_sk,
+        },
+      ],
+      [
+        { key: 'barangay', label: 'Barangay' },
+        { key: 'interested_to_join', label: 'Interested to Join' },
+        { key: 'official_members', label: 'Member' },
+        { key: 'pwd_yes', label: 'PWD' },
+        { key: 'upcoming_sk', label: 'Upcoming SK (14)' },
+      ],
+    )
     downloadCsv('kislap-youth-analytics-by-barangay.csv', csv)
   }
 
@@ -266,7 +301,16 @@ export default function YouthAnalytics() {
             <ArrowLeft size={16} /> <span className="youth-nav-label">Profiles</span>
             <span className="youth-nav-label-short">Back</span>
           </Link>
-          <button type="button" className="btn btn-primary" onClick={exportSummary} disabled={!rows.length && !barangayRows.some((row) => row.total)}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={exportSummary}
+            disabled={
+              !barangayRows.some(
+                (row) => row.interested_to_join || row.official_members || row.pwd_yes || row.upcoming_sk,
+              )
+            }
+          >
             <Download size={16} /> <span className="youth-nav-label">Export summary</span>
             <span className="youth-nav-label-short">Export</span>
           </button>
@@ -469,39 +513,50 @@ export default function YouthAnalytics() {
               <div>
                 <h2>Barangay statistical records</h2>
                 <p className="muted">
-                  Profiled youth, interest to join, and official KISLAP members by barangay.
+                  Interested to join, official members, PWD youth, and upcoming SK voters by barangay.
                 </p>
               </div>
             </header>
             <div className="table-wrap">
-              <table className="data-table">
+              <table className="data-table youth-barangay-stats-table">
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Barangay</th>
-                    <th>Total</th>
                     <th>Interested to Join</th>
                     <th>Member</th>
-                    <th>Contact</th>
                     <th>PWD</th>
+                    <th>Upcoming SK (14)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {barangayRows.map((row, index) => (
                     <tr
                       key={row.barangay}
-                      className={row.total || row.official_members ? '' : 'is-empty-row'}
+                      className={
+                        row.interested_to_join || row.official_members || row.pwd_yes || row.upcoming_sk
+                          ? ''
+                          : 'is-empty-row'
+                      }
                     >
                       <td>{index + 1}</td>
                       <td>{row.barangay}</td>
-                      <td>{row.total}</td>
                       <td>{row.interested_to_join}</td>
                       <td>{row.official_members}</td>
-                      <td>{row.contact_opt_in_yes}</td>
                       <td>{row.pwd_yes}</td>
+                      <td>{row.upcoming_sk}</td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="youth-barangay-totals-row">
+                    <td colSpan={2}>Total</td>
+                    <td>{barangayTotals.interested_to_join}</td>
+                    <td>{barangayTotals.official_members}</td>
+                    <td>{barangayTotals.pwd_yes}</td>
+                    <td>{barangayTotals.upcoming_sk}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </section>
