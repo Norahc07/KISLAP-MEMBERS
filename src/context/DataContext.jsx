@@ -4,17 +4,47 @@ import { useAuth } from './AuthContext'
 import { fetchAll } from '../lib/api'
 import { sortPositions } from '../lib/constants'
 import { tallyRoster } from '../lib/roster'
+import { isOnline, loadOfflineOrg, saveOfflineOrg, subscribeOnline } from '../lib/offlineCache'
 
 const DataContext = createContext(null)
 
+const EMPTY = { members: [], units: [], positions: [], tracker: [], profiles: [] }
+
 export function DataProvider({ children }) {
-  const { isAdmin } = useAuth()
-  const [data, setData] = useState({ members: [], units: [], positions: [], tracker: [], profiles: [] })
+  const { isAdmin, session } = useAuth()
+  const [data, setData] = useState(EMPTY)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [fromCache, setFromCache] = useState(false)
   const timer = useRef(null)
 
   const reload = useCallback(async () => {
+    if (!session) {
+      setData(EMPTY)
+      setLoading(false)
+      setFromCache(false)
+      return
+    }
+
+    if (!isOnline()) {
+      const cached = loadOfflineOrg()
+      if (cached) {
+        setData({
+          members: cached.members || [],
+          units: cached.units || [],
+          positions: cached.positions || [],
+          tracker: cached.tracker || [],
+          profiles: cached.profiles || [],
+        })
+        setFromCache(true)
+        setError(null)
+      } else {
+        setError('Offline. Open the app once online to cache organization data.')
+      }
+      setLoading(false)
+      return
+    }
+
     try {
       const org = await fetchAll()
       const tracker = await supabase
@@ -23,21 +53,38 @@ export function DataProvider({ children }) {
       const profiles = isAdmin
         ? await supabase.from('profiles').select('id, username, member_no, role, full_name')
         : { data: [] }
-      setData({
+      const next = {
         ...org,
         tracker: tracker.error ? [] : tracker.data || [],
         profiles: profiles.error ? [] : profiles.data || [],
-      })
+      }
+      setData(next)
+      saveOfflineOrg(next)
+      setFromCache(false)
       setError(null)
     } catch (err) {
-      setError(err.message)
+      const cached = loadOfflineOrg()
+      if (cached) {
+        setData({
+          members: cached.members || [],
+          units: cached.units || [],
+          positions: cached.positions || [],
+          tracker: cached.tracker || [],
+          profiles: cached.profiles || [],
+        })
+        setFromCache(true)
+        setError(null)
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }
-  }, [isAdmin])
+  }, [isAdmin, session])
 
   useEffect(() => {
     reload()
+    if (!session || !isOnline()) return undefined
     const scheduleReload = () => {
       clearTimeout(timer.current)
       timer.current = setTimeout(reload, 250)
@@ -54,6 +101,12 @@ export function DataProvider({ children }) {
       clearTimeout(timer.current)
       supabase.removeChannel(channel)
     }
+  }, [reload, session])
+
+  useEffect(() => {
+    return subscribeOnline((online) => {
+      if (online) reload()
+    })
   }, [reload])
 
   const derived = useMemo(() => {
@@ -95,7 +148,7 @@ export function DataProvider({ children }) {
     }
   }, [data])
 
-  const value = { ...data, ...derived, loading, error, reload }
+  const value = { ...data, ...derived, loading, error, fromCache, reload }
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }
 

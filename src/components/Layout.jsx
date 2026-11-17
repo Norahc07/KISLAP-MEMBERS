@@ -6,7 +6,7 @@ import Logo from './Logo'
 import RegisteredVoterPrompt from './RegisteredVoterPrompt'
 
 export default function Layout() {
-  const { user, profile, signOut, isAdmin, isAdviser, canAccessPage, setupNeeded } = useAuth()
+  const { user, profile, signOut, isAdmin, isAdviser, canAccessPage, setupNeeded, online, usingCachedAccess } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -145,6 +145,16 @@ export default function Layout() {
       {open && <div className="sidebar-scrim" onClick={() => setOpen(false)} />}
 
       <main className="main">
+        {!online && (
+          <div className="alert youth-offline-banner" role="status">
+            You are offline. You can keep using cached pages and Youth Profiling forms; data will sync when you reconnect.
+          </div>
+        )}
+        {online && usingCachedAccess && (
+          <div className="alert" role="status">
+            Restored your last saved permissions while reconnecting…
+          </div>
+        )}
         {isAdmin && setupNeeded && (
           <div className="alert">
             Member accounts are not in Supabase yet. Run <code>supabase/accounts.sql</code> in the SQL Editor.

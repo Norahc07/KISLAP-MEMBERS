@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, Lock, UserRound } from 'lucide-react'
+import { CloudOff, Eye, EyeOff, Lock, UserRound } from 'lucide-react'
 import Logo from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
+import { isOnline, loadOfflineMeta, subscribeOnline } from '../lib/offlineCache'
 
 export default function Login() {
   const { session, ready, signIn, mustChangePassword } = useAuth()
@@ -12,6 +13,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [online, setOnline] = useState(isOnline())
+  const offlineMeta = loadOfflineMeta()
+
+  useEffect(() => subscribeOnline(setOnline), [])
 
   if (!ready) {
     return (
@@ -55,6 +60,13 @@ export default function Login() {
           <p className="muted">Members sign in with their membership ID. Advisers sign in with their adviser username. The admin username is admin.</p>
         </div>
 
+        {!online && (
+          <div className="alert youth-offline-banner" role="status">
+            <CloudOff size={16} /> Offline mode: first-time sign-in needs internet. If you already signed in on this device, reopen the app to continue with your saved session
+            {offlineMeta?.lastUsername ? ` (${offlineMeta.lastUsername})` : ''}.
+          </div>
+        )}
+
         <label className="field">
           <span>Username</span>
           <div className="input-icon">
@@ -96,10 +108,12 @@ export default function Login() {
 
         {error && <div className="alert">{error}</div>}
 
-        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
+        <button type="submit" className="btn btn-primary btn-block" disabled={busy || !online}>
+          {busy ? 'Signing in…' : online ? 'Sign in' : 'Sign in (needs internet)'}
         </button>
-        <p className="muted small">After the first sign-in, choose your own password. It is saved to your account immediately.</p>
+        <p className="muted small">
+          After the first sign-in on this device, you can reopen KISLAP offline for Youth Profiling and cached pages. Sign out clears the offline session.
+        </p>
       </form>
     </div>
   )

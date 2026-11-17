@@ -5,7 +5,10 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
 import { ToastProvider } from './context/ToastContext'
+import { startAuthConnectivityGuard } from './supabaseClient'
 import './index.css'
+
+startAuthConnectivityGuard()
 
 window.deferredInstall = null
 window.addEventListener('beforeinstallprompt', (event) => {
