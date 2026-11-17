@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Check, CloudOff, Wifi } from 'lucide-react'
+import AddressLocationFields from '../components/AddressLocationFields'
 import DateField from '../components/DateField'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -37,6 +38,7 @@ import {
   YES_NO,
   YOUTH_STEPS,
   emptyYouthProfile,
+  formatYouthAddress,
   fromRow,
   fullName,
   labelOf,
@@ -187,7 +189,7 @@ export default function YouthForm() {
     const payload = {
       ...form,
       status: nextStatus,
-      collection_barangay: form.collection_barangay || form.barangay,
+      collection_barangay: form.barangay,
       collected_by: profile?.member_no || null,
     }
     await saveLocalYouth(payload, { syncStatus: online ? 'pending' : 'pending' })
@@ -453,19 +455,22 @@ export default function YouthForm() {
               )}
               <label className="field">
                 <span>Current barangay of residence</span>
-                <select className="input" value={form.barangay} onChange={setField('barangay')}>
+                <select
+                  className="input"
+                  value={form.barangay}
+                  onChange={(event) => {
+                    const barangay = event.target.value
+                    setForm((current) => {
+                      const next = { ...current, barangay }
+                      if (current.current_city === 'Mauban' || !current.current_barangay) {
+                        next.current_barangay = barangay
+                        if (current.same_as_current_address) next.permanent_barangay = barangay
+                      }
+                      return next
+                    })
+                  }}
+                >
                   <option value="">Select barangay</option>
-                  {MAUBAN_BARANGAYS.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>Collection barangay (where gathered)</span>
-                <select className="input" value={form.collection_barangay} onChange={setField('collection_barangay')}>
-                  <option value="">Same as residence</option>
                   {MAUBAN_BARANGAYS.map((name) => (
                     <option key={name} value={name}>
                       {name}
@@ -517,23 +522,31 @@ export default function YouthForm() {
                   )}
                 </>
               )}
-              <label className="field">
-                <span>Current address</span>
-                <input
-                  className="input"
-                  value={form.current_address}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    setForm((current) => ({
+              <AddressLocationFields
+                title="Current address"
+                street={form.current_street}
+                province={form.current_province}
+                city={form.current_city}
+                barangay={form.current_barangay}
+                onChange={({ street, province, city, barangay }) => {
+                  setForm((current) => {
+                    const next = {
                       ...current,
-                      current_address: value,
-                      address: value,
-                      permanent_address: current.same_as_current_address ? value : current.permanent_address,
-                    }))
-                  }}
-                  placeholder="House no., street, sitio / purok"
-                />
-              </label>
+                      current_street: street,
+                      current_province: province,
+                      current_city: city,
+                      current_barangay: barangay,
+                    }
+                    if (current.same_as_current_address) {
+                      next.permanent_street = street
+                      next.permanent_province = province
+                      next.permanent_city = city
+                      next.permanent_barangay = barangay
+                    }
+                    return next
+                  })
+                }}
+              />
               <label className="check-row youth-willing-toggle">
                 <input
                   type="checkbox"
@@ -543,22 +556,32 @@ export default function YouthForm() {
                     setForm((current) => ({
                       ...current,
                       same_as_current_address: checked,
-                      permanent_address: checked ? current.current_address : current.permanent_address,
+                      permanent_street: checked ? current.current_street : current.permanent_street,
+                      permanent_province: checked ? current.current_province : current.permanent_province,
+                      permanent_city: checked ? current.current_city : current.permanent_city,
+                      permanent_barangay: checked ? current.current_barangay : current.permanent_barangay,
                     }))
                   }}
                 />
                 <span>Permanent address is the same as current address</span>
               </label>
-              <label className="field">
-                <span>Permanent address</span>
-                <input
-                  className="input"
-                  value={form.permanent_address}
-                  onChange={setField('permanent_address')}
-                  placeholder="House no., street, sitio / purok, barangay / city"
-                  disabled={Boolean(form.same_as_current_address)}
-                />
-              </label>
+              <AddressLocationFields
+                title="Permanent address"
+                street={form.permanent_street}
+                province={form.permanent_province}
+                city={form.permanent_city}
+                barangay={form.permanent_barangay}
+                disabled={Boolean(form.same_as_current_address)}
+                onChange={({ street, province, city, barangay }) => {
+                  setForm((current) => ({
+                    ...current,
+                    permanent_street: street,
+                    permanent_province: province,
+                    permanent_city: city,
+                    permanent_barangay: barangay,
+                  }))
+                }}
+              />
               <div className="field-row">
                 <label className="field">
                   <span>Contact number (optional)</span>
@@ -783,14 +806,33 @@ export default function YouthForm() {
                 </div>
                 <div>
                   <dt>Current address</dt>
-                  <dd>{form.current_address || '-'}</dd>
+                  <dd>
+                    {formatYouthAddress({
+                      street: form.current_street,
+                      barangay: form.current_barangay,
+                      city: form.current_city,
+                      province: form.current_province,
+                    }) || '-'}
+                  </dd>
                 </div>
                 <div>
                   <dt>Permanent address</dt>
                   <dd>
-                    {form.same_as_current_address
-                      ? form.current_address || '-'
-                      : form.permanent_address || '-'}
+                    {formatYouthAddress(
+                      form.same_as_current_address
+                        ? {
+                            street: form.current_street,
+                            barangay: form.current_barangay,
+                            city: form.current_city,
+                            province: form.current_province,
+                          }
+                        : {
+                            street: form.permanent_street,
+                            barangay: form.permanent_barangay,
+                            city: form.permanent_city,
+                            province: form.permanent_province,
+                          },
+                    ) || '-'}
                   </dd>
                 </div>
                 <div>

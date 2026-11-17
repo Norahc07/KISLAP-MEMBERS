@@ -5792,6 +5792,29 @@ select.input {
   gap: 8px;
 }
 
+.youth-address-block {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+
+.youth-address-block h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.youth-address-block.is-disabled {
+  opacity: 0.72;
+}
+
+.youth-address-location-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .youth-form-meta {
   display: flex;
   justify-content: space-between;
@@ -6298,7 +6321,8 @@ select.input {
   .youth-analytics-grid.twocol,
   .youth-analytics-grid.engagement,
   .youth-analytics-grid.threecol,
-  .youth-review-grid {
+  .youth-review-grid,
+  .youth-address-location-row {
     grid-template-columns: 1fr;
   }
 

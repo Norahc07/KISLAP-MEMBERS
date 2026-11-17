@@ -410,7 +410,15 @@ export function emptyYouthProfile() {
     household_relationship: '',
     household_relationship_other: '',
     address: '',
+    current_street: '',
+    current_province: 'Quezon',
+    current_city: 'Mauban',
+    current_barangay: '',
     current_address: '',
+    permanent_street: '',
+    permanent_province: 'Quezon',
+    permanent_city: 'Mauban',
+    permanent_barangay: '',
     permanent_address: '',
     same_as_current_address: false,
     contact_number: '',
@@ -455,6 +463,13 @@ export function emptyYouthProfile() {
   }
 }
 
+export function formatYouthAddress({ street = '', barangay = '', city = '', province = '' } = {}) {
+  return [street, barangay, city, province]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
 export function fullName(row) {
   return [row.first_name, row.middle_name, row.last_name, row.suffix]
     .map((part) => String(part || '').trim())
@@ -470,7 +485,7 @@ export function labelOf(options, value) {
 
 export function fromRow(row) {
   if (!row) return emptyYouthProfile()
-  return {
+  return hydrateLegacyAddress({
     ...emptyYouthProfile(),
     ...row,
     client_id: row.client_id || newClientId(),
@@ -490,14 +505,51 @@ export function fromRow(row) {
     consent_agreed: row.consent_agreed ?? null,
     guardian_permission: row.guardian_permission ?? null,
     youth_assent: row.youth_assent ?? null,
+    current_street: row.current_street || '',
+    current_province: row.current_province || '',
+    current_city: row.current_city || '',
+    current_barangay: row.current_barangay || '',
     current_address: row.current_address || row.address || '',
+    permanent_street: row.permanent_street || '',
+    permanent_province: row.permanent_province || '',
+    permanent_city: row.permanent_city || '',
+    permanent_barangay: row.permanent_barangay || '',
     permanent_address: row.permanent_address || '',
     same_as_current_address: Boolean(
       (row.current_address || row.address) &&
         row.permanent_address &&
         String(row.current_address || row.address).trim() === String(row.permanent_address).trim(),
     ),
+  })
+}
+
+function hydrateLegacyAddress(form) {
+  const next = { ...form }
+  if (!next.current_province && !next.current_city && !next.current_barangay && next.current_address) {
+    next.current_street = next.current_street || next.current_address
   }
+  if (
+    !next.permanent_province &&
+    !next.permanent_city &&
+    !next.permanent_barangay &&
+    next.permanent_address &&
+    !next.same_as_current_address
+  ) {
+    next.permanent_street = next.permanent_street || next.permanent_address
+  }
+  if (!next.current_province) next.current_province = 'Quezon'
+  if (!next.current_city) next.current_city = 'Mauban'
+  if (!next.current_barangay && next.barangay) next.current_barangay = next.barangay
+  if (next.same_as_current_address) {
+    next.permanent_street = next.current_street
+    next.permanent_province = next.current_province
+    next.permanent_city = next.current_city
+    next.permanent_barangay = next.current_barangay
+  } else {
+    if (!next.permanent_province) next.permanent_province = 'Quezon'
+    if (!next.permanent_city) next.permanent_city = 'Mauban'
+  }
+  return next
 }
 
 export function toPayload(form, { collectedBy = null } = {}) {
@@ -527,11 +579,43 @@ export function toPayload(form, { collectedBy = null } = {}) {
     is_household_head: form.is_household_head || null,
     household_relationship: form.household_relationship || null,
     household_relationship_other: form.household_relationship_other || '',
-    current_address: form.current_address.trim(),
-    permanent_address: form.same_as_current_address
-      ? form.current_address.trim()
-      : form.permanent_address.trim(),
-    address: form.current_address.trim(),
+    current_street: (form.current_street || '').trim(),
+    current_province: form.current_province || '',
+    current_city: form.current_city || '',
+    current_barangay: form.current_barangay || '',
+    permanent_street: form.same_as_current_address
+      ? (form.current_street || '').trim()
+      : (form.permanent_street || '').trim(),
+    permanent_province: form.same_as_current_address ? form.current_province || '' : form.permanent_province || '',
+    permanent_city: form.same_as_current_address ? form.current_city || '' : form.permanent_city || '',
+    permanent_barangay: form.same_as_current_address ? form.current_barangay || '' : form.permanent_barangay || '',
+    current_address: formatYouthAddress({
+      street: form.current_street,
+      barangay: form.current_barangay,
+      city: form.current_city,
+      province: form.current_province,
+    }),
+    permanent_address: formatYouthAddress(
+      form.same_as_current_address
+        ? {
+            street: form.current_street,
+            barangay: form.current_barangay,
+            city: form.current_city,
+            province: form.current_province,
+          }
+        : {
+            street: form.permanent_street,
+            barangay: form.permanent_barangay,
+            city: form.permanent_city,
+            province: form.permanent_province,
+          },
+    ),
+    address: formatYouthAddress({
+      street: form.current_street,
+      barangay: form.current_barangay,
+      city: form.current_city,
+      province: form.current_province,
+    }),
     contact_number: form.contact_number.trim(),
     email: form.email.trim(),
     educational_status: form.educational_status || null,
@@ -570,7 +654,7 @@ export function toPayload(form, { collectedBy = null } = {}) {
     additional_notes: form.additional_notes.trim(),
     status: form.status || 'submitted',
     collected_by: collectedBy,
-    collection_barangay: form.collection_barangay || form.barangay || '',
+    collection_barangay: form.barangay || '',
   }
   return payload
 }
@@ -603,7 +687,15 @@ export function validateStep(stepId, form) {
     requireValue(form.date_of_birth, 'Date of birth', missing)
     requireValue(form.sex, 'Sex', missing)
     requireValue(form.civil_status, 'Civil status', missing)
-    requireValue(form.barangay, 'Barangay', missing)
+    requireValue(form.barangay, 'Current barangay of residence', missing)
+    requireValue(form.current_province, 'Current province', missing)
+    requireValue(form.current_city, 'Current municipality / city', missing)
+    requireValue(form.current_barangay, 'Current address barangay', missing)
+    if (!form.same_as_current_address) {
+      requireValue(form.permanent_province, 'Permanent province', missing)
+      requireValue(form.permanent_city, 'Permanent municipality / city', missing)
+      requireValue(form.permanent_barangay, 'Permanent address barangay', missing)
+    }
     requireValue(form.registered_voter, 'Registered voter', missing)
     if (form.registered_voter === 'yes') {
       requireValue(form.voter_barangay, 'Voter registration barangay', missing)
