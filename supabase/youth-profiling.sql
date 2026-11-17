@@ -1,5 +1,6 @@
 -- KISLAP Kabataan — Mauban Youth Profiling and Volunteerism Survey
--- Run once in the Supabase SQL Editor after supabase/staff-page-access.sql
+-- Run in the Supabase SQL Editor after supabase/staff-page-access.sql
+-- Safe to re-run: additive columns + CREATE OR REPLACE functions are idempotent.
 --
 -- Grantable staff keys added:
 --   youth_profiling, youth_profiling_create, youth_profiling_update, youth_profiling_delete
@@ -110,12 +111,59 @@ create table if not exists public.youth_profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Additive columns for databases that already had an older youth_profiles table.
+-- CREATE TABLE IF NOT EXISTS above will not add these on existing installs.
+alter table public.youth_profiles
+  add column if not exists pwd text,
+  add column if not exists pwd_details text not null default '',
+  add column if not exists current_address text not null default '',
+  add column if not exists permanent_address text not null default '',
+  add column if not exists current_street text not null default '',
+  add column if not exists current_province text not null default '',
+  add column if not exists current_city text not null default '',
+  add column if not exists current_barangay text not null default '',
+  add column if not exists permanent_street text not null default '',
+  add column if not exists permanent_province text not null default '',
+  add column if not exists permanent_city text not null default '',
+  add column if not exists permanent_barangay text not null default '';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'youth_profiles_pwd_check'
+  ) then
+    alter table public.youth_profiles
+      add constraint youth_profiles_pwd_check
+      check (pwd is null or pwd in ('yes', 'no', 'prefer_not'));
+  end if;
+end $$;
+
 create index if not exists youth_profiles_barangay_idx on public.youth_profiles (barangay);
 create index if not exists youth_profiles_membership_interest_idx on public.youth_profiles (membership_interest);
 create index if not exists youth_profiles_collected_by_idx on public.youth_profiles (collected_by);
 create index if not exists youth_profiles_status_idx on public.youth_profiles (status);
 create index if not exists youth_profiles_volunteer_interest_idx on public.youth_profiles (volunteer_interest);
 create index if not exists youth_profiles_pwd_idx on public.youth_profiles (pwd);
+
+-- Keep composed address fields populated for older free-text rows.
+update public.youth_profiles
+set current_address = address
+where coalesce(nullif(btrim(current_address), ''), '') = ''
+  and coalesce(nullif(btrim(address), ''), '') <> '';
+
+update public.youth_profiles
+set current_street = current_address
+where coalesce(nullif(btrim(current_street), ''), '') = ''
+  and coalesce(nullif(btrim(current_address), ''), '') <> ''
+  and coalesce(nullif(btrim(current_province), ''), '') = '';
+
+update public.youth_profiles
+set permanent_street = permanent_address
+where coalesce(nullif(btrim(permanent_street), ''), '') = ''
+  and coalesce(nullif(btrim(permanent_address), ''), '') <> ''
+  and coalesce(nullif(btrim(permanent_province), ''), '') = '';
 
 alter table public.youth_profiles enable row level security;
 

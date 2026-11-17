@@ -239,10 +239,19 @@ export function AuthProvider({ children }) {
       }
       const email = loginEmail(String(username || '').replace(/[\u200B-\u200D\uFEFF]/g, ''))
       if (!email) return { error: { message: 'Use admin, a membership ID such as KISLAP-26-001, or an adviser username such as RICHMOND.BANAAG.' } }
-      const result = await supabase.auth.signInWithPassword({
+      const passwordValue = String(password || '').trim()
+      let result = await supabase.auth.signInWithPassword({
         email,
-        password: String(password || '').trim(),
+        password: passwordValue,
       })
+      // One retry for brief Supabase Auth blips (status yellow / transient 5xx).
+      if (result.error && isNetworkError(result.error)) {
+        await new Promise((resolve) => setTimeout(resolve, 700))
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password: passwordValue,
+        })
+      }
       if (!result.error) {
         supabase.rpc('log_audit', { p_action: 'sign_in', p_summary: 'Signed in', p_detail: {} }).then(() => {}, () => {})
       }

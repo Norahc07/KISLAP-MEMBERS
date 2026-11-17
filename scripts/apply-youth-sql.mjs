@@ -31,17 +31,14 @@ To apply now, set the connection string then re-run:
     $env:SUPABASE_DB_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_REF.supabase.co:5432/postgres"
     node scripts/apply-youth-sql.mjs
 
-Or paste these files in the Supabase SQL Editor when you can open the account:
-  1) supabase/youth-profiling.sql
-  2) supabase/youth-profiling-pwd.sql  (only if the table already existed without PWD)
+Or paste this file in the Supabase SQL Editor when you can open the account:
+  1) supabase/youth-profiling.sql   (includes PWD + address column upgrades)
 `)
   process.exit(1)
 }
 
 const files = [
   'supabase/youth-profiling.sql',
-  'supabase/youth-profiling-pwd.sql',
-  'supabase/youth-profiling-addresses.sql',
 ]
   .map((rel) => resolve(root, rel))
   .filter((file) => existsSync(file))
