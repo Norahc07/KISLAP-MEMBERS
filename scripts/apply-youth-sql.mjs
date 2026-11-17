@@ -38,7 +38,11 @@ Or paste these files in the Supabase SQL Editor when you can open the account:
   process.exit(1)
 }
 
-const files = ['supabase/youth-profiling.sql', 'supabase/youth-profiling-pwd.sql']
+const files = [
+  'supabase/youth-profiling.sql',
+  'supabase/youth-profiling-pwd.sql',
+  'supabase/youth-profiling-addresses.sql',
+]
   .map((rel) => resolve(root, rel))
   .filter((file) => existsSync(file))
 

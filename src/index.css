@@ -5976,65 +5976,6 @@ select.input {
   margin-bottom: 24px;
 }
 
-body.youth-present-mode .sidebar,
-body.youth-present-mode .mobile-bar,
-body.youth-present-mode .sidebar-scrim {
-  display: none !important;
-}
-
-body.youth-present-mode .app-shell {
-  display: block;
-}
-
-body.youth-present-mode .main {
-  margin: 0 !important;
-  padding: 18px 22px 28px !important;
-  width: 100% !important;
-  max-width: none !important;
-}
-
-.youth-analytics.is-present {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 34%),
-    linear-gradient(180deg, #f8fafc 0%, #eef6f3 100%);
-  padding: 8px 4px 24px;
-}
-
-.youth-analytics.is-present .page-header h1 {
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-}
-
-.youth-analytics.is-present .youth-kpi-strip article {
-  padding: 20px 18px;
-  border-color: #cbd5e1;
-  box-shadow: none;
-}
-
-.youth-analytics.is-present .youth-kpi-strip strong {
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
-}
-
-.youth-analytics.is-present .youth-chart-card,
-.youth-analytics.is-present .youth-map-panel {
-  box-shadow: none;
-  border-color: #cbd5e1;
-}
-
-.youth-analytics.is-present .youth-map-frame,
-.youth-analytics.is-present .youth-leaflet {
-  min-height: 440px;
-}
-
-.youth-analytics.is-present .youth-chart-body .recharts-wrapper {
-  font-size: 0.95rem;
-}
-
-.youth-present-hint {
-  margin: -4px 0 14px;
-  font-weight: 650;
-}
-
 .choice.is-disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -6276,18 +6217,6 @@ body.youth-present-mode .main {
     padding-bottom: 4px;
   }
 
-  .youth-analytics.is-present {
-    padding: 4px 0 16px;
-  }
-
-  .youth-analytics.is-present .youth-map-frame,
-  .youth-analytics.is-present .youth-leaflet {
-    min-height: 240px;
-  }
-
-  body.youth-present-mode .main {
-    padding: 12px 10px 20px !important;
-  }
 }
 
 @media print {

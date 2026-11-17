@@ -410,6 +410,9 @@ export function emptyYouthProfile() {
     household_relationship: '',
     household_relationship_other: '',
     address: '',
+    current_address: '',
+    permanent_address: '',
+    same_as_current_address: false,
     contact_number: '',
     email: '',
     educational_status: '',
@@ -487,6 +490,13 @@ export function fromRow(row) {
     consent_agreed: row.consent_agreed ?? null,
     guardian_permission: row.guardian_permission ?? null,
     youth_assent: row.youth_assent ?? null,
+    current_address: row.current_address || row.address || '',
+    permanent_address: row.permanent_address || '',
+    same_as_current_address: Boolean(
+      (row.current_address || row.address) &&
+        row.permanent_address &&
+        String(row.current_address || row.address).trim() === String(row.permanent_address).trim(),
+    ),
   }
 }
 
@@ -517,7 +527,11 @@ export function toPayload(form, { collectedBy = null } = {}) {
     is_household_head: form.is_household_head || null,
     household_relationship: form.household_relationship || null,
     household_relationship_other: form.household_relationship_other || '',
-    address: form.address.trim(),
+    current_address: form.current_address.trim(),
+    permanent_address: form.same_as_current_address
+      ? form.current_address.trim()
+      : form.permanent_address.trim(),
+    address: form.current_address.trim(),
     contact_number: form.contact_number.trim(),
     email: form.email.trim(),
     educational_status: form.educational_status || null,

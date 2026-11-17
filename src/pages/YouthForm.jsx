@@ -518,8 +518,46 @@ export default function YouthForm() {
                 </>
               )}
               <label className="field">
-                <span>Complete address (optional)</span>
-                <input className="input" value={form.address} onChange={setField('address')} />
+                <span>Current address</span>
+                <input
+                  className="input"
+                  value={form.current_address}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setForm((current) => ({
+                      ...current,
+                      current_address: value,
+                      address: value,
+                      permanent_address: current.same_as_current_address ? value : current.permanent_address,
+                    }))
+                  }}
+                  placeholder="House no., street, sitio / purok"
+                />
+              </label>
+              <label className="check-row youth-willing-toggle">
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.same_as_current_address)}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    setForm((current) => ({
+                      ...current,
+                      same_as_current_address: checked,
+                      permanent_address: checked ? current.current_address : current.permanent_address,
+                    }))
+                  }}
+                />
+                <span>Permanent address is the same as current address</span>
+              </label>
+              <label className="field">
+                <span>Permanent address</span>
+                <input
+                  className="input"
+                  value={form.permanent_address}
+                  onChange={setField('permanent_address')}
+                  placeholder="House no., street, sitio / purok, barangay / city"
+                  disabled={Boolean(form.same_as_current_address)}
+                />
               </label>
               <div className="field-row">
                 <label className="field">
@@ -741,7 +779,19 @@ export default function YouthForm() {
               <dl className="youth-review-grid">
                 <div>
                   <dt>Barangay</dt>
-                  <dd>{form.barangay || '?'}</dd>
+                  <dd>{form.barangay || '-'}</dd>
+                </div>
+                <div>
+                  <dt>Current address</dt>
+                  <dd>{form.current_address || '-'}</dd>
+                </div>
+                <div>
+                  <dt>Permanent address</dt>
+                  <dd>
+                    {form.same_as_current_address
+                      ? form.current_address || '-'
+                      : form.permanent_address || '-'}
+                  </dd>
                 </div>
                 <div>
                   <dt>PWD</dt>
@@ -764,7 +814,7 @@ export default function YouthForm() {
                 </div>
                 <div>
                   <dt>Contribution areas</dt>
-                  <dd>{(form.contribution_areas || []).join(', ') || '?'}</dd>
+                  <dd>{(form.contribution_areas || []).join(', ') || '-'}</dd>
                 </div>
                 <div>
                   <dt>Contact opt-in</dt>
