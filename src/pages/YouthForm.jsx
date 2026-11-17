@@ -48,58 +48,107 @@ import {
 import { fetchYouthByClientId, fetchYouthProfile, upsertYouthProfile } from '../lib/youthApi'
 import { getLocalYouth, isOnline, saveLocalYouth, subscribeOnline } from '../lib/youthOffline'
 
-function ChoiceSet({ legend, hint, children }) {
+function optionPairs(options) {
+  return (options || []).map((option) => (Array.isArray(option) ? option : [option, option]))
+}
+
+function SelectField({ label, hint, value, onChange, options, placeholder = 'Select an option' }) {
+  const pairs = optionPairs(options)
+  const raw = value === null || value === undefined || value === '' ? '' : String(value)
   return (
-    <fieldset className="choice-set">
-      <legend>
-        {legend}
+    <label className="field">
+      <span>
+        {label}
         {hint ? <small>{hint}</small> : null}
-      </legend>
-      {children}
-    </fieldset>
+      </span>
+      <select
+        className="input"
+        value={raw}
+        onChange={(event) => {
+          const next = event.target.value
+          if (next === '') {
+            onChange('')
+            return
+          }
+          const match = pairs.find(([key]) => String(key) === next)
+          onChange(match ? match[0] : next)
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {pairs.map(([key, text]) => (
+          <option key={String(key)} value={String(key)}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 
-function RadioGrid({ options, value, onChange, compact }) {
-  return (
-    <div className={`choice-grid${compact ? ' choice-grid-compact' : ''}`}>
-      {options.map((option) => {
-        const [key, label] = Array.isArray(option) ? option : [option, option]
-        const active = value === key || value === String(key)
-        return (
-          <label key={String(key)} className={`choice${active ? ' active' : ''}`}>
-            <input type="radio" checked={active} onChange={() => onChange(key)} />
-            <span>{label}</span>
-          </label>
-        )
-      })}
-    </div>
-  )
-}
-
-function CheckGrid({ options, values, onToggle, max }) {
+function MultiSelectField({
+  label,
+  hint,
+  values,
+  onChange,
+  options,
+  max,
+  placeholder = 'Select to add…',
+}) {
   const selected = values || []
+  const pairs = optionPairs(options)
+  const available = pairs.filter(([key]) => !selected.includes(key))
+  const atMax = Boolean(max && selected.length >= max)
+
+  function add(key) {
+    if (!key || selected.includes(key) || atMax) return
+    onChange([...selected, key])
+  }
+
+  function remove(key) {
+    onChange(selected.filter((item) => item !== key))
+  }
+
   return (
-    <div className="choice-grid">
-      {options.map((option) => {
-        const [key, label] = Array.isArray(option) ? option : [option, option]
-        const active = selected.includes(key)
-        const disabled = !active && max && selected.length >= max
-        return (
-          <label key={key} className={`choice${active ? ' active' : ''}${disabled ? ' is-disabled' : ''}`}>
-            <input
-              type="checkbox"
-              checked={active}
-              disabled={disabled}
-              onChange={() => {
-                if (disabled) return
-                onToggle(key)
-              }}
-            />
-            <span>{label}</span>
-          </label>
-        )
-      })}
+    <div className="field youth-multi-select">
+      <span>
+        {label}
+        {hint ? <small>{hint}</small> : null}
+      </span>
+      <select
+        className="input"
+        value=""
+        disabled={atMax || !available.length}
+        onChange={(event) => {
+          add(event.target.value)
+          event.target.value = ''
+        }}
+      >
+        <option value="">
+          {atMax ? `Maximum of ${max} selected` : available.length ? placeholder : 'All options selected'}
+        </option>
+        {available.map(([key, text]) => (
+          <option key={String(key)} value={key}>
+            {text}
+          </option>
+        ))}
+      </select>
+      {selected.length ? (
+        <ul className="youth-multi-chips">
+          {selected.map((key) => {
+            const text = pairs.find(([item]) => item === key)?.[1] || key
+            return (
+              <li key={key}>
+                <span>{text}</span>
+                <button type="button" aria-label={`Remove ${text}`} onClick={() => remove(key)}>
+                  ×
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <p className="muted youth-multi-empty">No selections yet.</p>
+      )}
     </div>
   )
 }
@@ -125,14 +174,8 @@ export default function YouthForm() {
   const setField = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
   const setValue = (key, value) => setForm((current) => ({ ...current, [key]: value }))
 
-  function toggleList(key, value) {
-    setForm((current) => {
-      const list = current[key] || []
-      return {
-        ...current,
-        [key]: list.includes(value) ? list.filter((item) => item !== value) : [...list, value],
-      }
-    })
+  function setList(key, values) {
+    setForm((current) => ({ ...current, [key]: values }))
   }
 
   useEffect(() => subscribeOnline(setOnline), [])
@@ -326,58 +369,72 @@ export default function YouthForm() {
                 Magandang araw, Kabataan ng Mauban! This survey helps KISLAP understand youth interests, skills, and
                 willingness to volunteer. Participation does not make you a KISLAP member.
               </p>
-              <ChoiceSet legend="1. Are you currently 14-30 years old?" hint="Age 14 is included to track youth becoming eligible for barangay SK voting at 15.">
-                <RadioGrid
-                  options={[[true, 'Yes'], [false, 'No']]}
-                  value={form.age_eligible}
-                  onChange={(value) => setValue('age_eligible', value)}
-                  compact
-                />
-              </ChoiceSet>
-              <ChoiceSet legend="2. Do you currently reside in the Municipality of Mauban, Quezon?">
-                <RadioGrid
-                  options={[[true, 'Yes'], [false, 'No']]}
-                  value={form.resides_mauban}
-                  onChange={(value) => setValue('resides_mauban', value)}
-                  compact
-                />
-              </ChoiceSet>
-              <ChoiceSet legend="3. Profiling participation agreement" hint="I understand the purpose of this survey and voluntarily agree to participate.">
-                <RadioGrid
-                  options={[
-                    [true, 'Yes, I agree.'],
-                    [false, 'No, I do not agree.'],
-                  ]}
-                  value={form.consent_agreed}
-                  onChange={(value) => setValue('consent_agreed', value)}
-                />
-              </ChoiceSet>
-              <ChoiceSet legend="Age band">
-                <RadioGrid options={AGE_BANDS} value={form.age_band} onChange={(value) => setValue('age_band', value)} compact />
-              </ChoiceSet>
+              <SelectField
+                label="1. Are you currently 14-30 years old?"
+                hint="Age 14 is included to track youth becoming eligible for barangay SK voting at 15."
+                options={[
+                  [true, 'Yes'],
+                  [false, 'No'],
+                ]}
+                value={form.age_eligible}
+                onChange={(value) => setValue('age_eligible', value === '' ? null : value)}
+                placeholder="Select yes or no"
+              />
+              <SelectField
+                label="2. Do you currently reside in the Municipality of Mauban, Quezon?"
+                options={[
+                  [true, 'Yes'],
+                  [false, 'No'],
+                ]}
+                value={form.resides_mauban}
+                onChange={(value) => setValue('resides_mauban', value === '' ? null : value)}
+                placeholder="Select yes or no"
+              />
+              <SelectField
+                label="3. Profiling participation agreement"
+                hint="I understand the purpose of this survey and voluntarily agree to participate."
+                options={[
+                  [true, 'Yes, I agree.'],
+                  [false, 'No, I do not agree.'],
+                ]}
+                value={form.consent_agreed}
+                onChange={(value) => setValue('consent_agreed', value === '' ? null : value)}
+                placeholder="Select your response"
+              />
+              <SelectField
+                label="Age band"
+                options={AGE_BANDS}
+                value={form.age_band}
+                onChange={(value) => setValue('age_band', value)}
+                placeholder="Select age band"
+              />
               {needsGuardianAssent(form.age_band) && (
                 <div className="youth-guardian-block">
                   <h2>Parent / guardian permission (ages 14-17)</h2>
                   <label className="field">
                     <span>Guardian name</span>
-                    <input className="input" value={form.guardian_name} onChange={setField('guardian_name')} />
+                    <input className="input" value={form.guardian_name} onChange={setField('guardian_name')} placeholder="Full name of parent or guardian" />
                   </label>
-                  <ChoiceSet legend="Guardian permission obtained?">
-                    <RadioGrid
-                      options={[[true, 'Yes'], [false, 'No']]}
-                      value={form.guardian_permission}
-                      onChange={(value) => setValue('guardian_permission', value)}
-                      compact
-                    />
-                  </ChoiceSet>
-                  <ChoiceSet legend="Youth assent obtained?">
-                    <RadioGrid
-                      options={[[true, 'Yes'], [false, 'No']]}
-                      value={form.youth_assent}
-                      onChange={(value) => setValue('youth_assent', value)}
-                      compact
-                    />
-                  </ChoiceSet>
+                  <SelectField
+                    label="Guardian permission obtained?"
+                    options={[
+                      [true, 'Yes'],
+                      [false, 'No'],
+                    ]}
+                    value={form.guardian_permission}
+                    onChange={(value) => setValue('guardian_permission', value === '' ? null : value)}
+                    placeholder="Select yes or no"
+                  />
+                  <SelectField
+                    label="Youth assent obtained?"
+                    options={[
+                      [true, 'Yes'],
+                      [false, 'No'],
+                    ]}
+                    value={form.youth_assent}
+                    onChange={(value) => setValue('youth_assent', value === '' ? null : value)}
+                    placeholder="Select yes or no"
+                  />
                 </div>
               )}
             </>
@@ -413,15 +470,22 @@ export default function YouthForm() {
                 <span>Date of birth</span>
                 <DateField value={form.date_of_birth} onChange={(value) => setValue('date_of_birth', value)} />
               </label>
-              <ChoiceSet legend="Sex">
-                <RadioGrid options={SEX_OPTIONS} value={form.sex} onChange={(value) => setValue('sex', value)} compact />
-              </ChoiceSet>
-              <ChoiceSet legend="Civil status">
-                <RadioGrid options={CIVIL_STATUS_OPTIONS} value={form.civil_status} onChange={(value) => setValue('civil_status', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Person with disability (PWD)" hint="Optional. Disclose only if comfortable.">
-                <RadioGrid options={PWD_OPTIONS} value={form.pwd} onChange={(value) => setValue('pwd', value)} compact />
-              </ChoiceSet>
+              <SelectField label="Sex" options={SEX_OPTIONS} value={form.sex} onChange={(value) => setValue('sex', value)} placeholder="Select sex" />
+              <SelectField
+                label="Civil status"
+                options={CIVIL_STATUS_OPTIONS}
+                value={form.civil_status}
+                onChange={(value) => setValue('civil_status', value)}
+                placeholder="Select civil status"
+              />
+              <SelectField
+                label="Person with disability (PWD)"
+                hint="Optional. Disclose only if comfortable."
+                options={PWD_OPTIONS}
+                value={form.pwd}
+                onChange={(value) => setValue('pwd', value)}
+                placeholder="Select an option"
+              />
               {form.pwd === 'yes' && (
                 <>
                   <label className="field">
@@ -478,9 +542,13 @@ export default function YouthForm() {
                   ))}
                 </select>
               </label>
-              <ChoiceSet legend="Are you a registered voter?">
-                <RadioGrid options={VOTER_STATUS} value={form.registered_voter} onChange={(value) => setValue('registered_voter', value)} />
-              </ChoiceSet>
+              <SelectField
+                label="Are you a registered voter?"
+                options={VOTER_STATUS}
+                value={form.registered_voter}
+                onChange={(value) => setValue('registered_voter', value)}
+                placeholder="Select voter status"
+              />
               {form.registered_voter === 'yes' && (
                 <>
                   <label className="field">
@@ -502,22 +570,31 @@ export default function YouthForm() {
                   )}
                 </>
               )}
-              <ChoiceSet legend="Are you the head of your family/household?">
-                <RadioGrid options={YES_NO} value={form.is_household_head} onChange={(value) => setValue('is_household_head', value)} compact />
-              </ChoiceSet>
+              <SelectField
+                label="Are you the head of your family/household?"
+                options={YES_NO}
+                value={form.is_household_head}
+                onChange={(value) => setValue('is_household_head', value)}
+                placeholder="Select yes or no"
+              />
               {form.is_household_head === 'no' && (
                 <>
-                  <ChoiceSet legend="Relationship to the head of household">
-                    <RadioGrid
-                      options={HOUSEHOLD_RELATIONSHIPS}
-                      value={form.household_relationship}
-                      onChange={(value) => setValue('household_relationship', value)}
-                    />
-                  </ChoiceSet>
+                  <SelectField
+                    label="Relationship to the head of household"
+                    options={HOUSEHOLD_RELATIONSHIPS}
+                    value={form.household_relationship}
+                    onChange={(value) => setValue('household_relationship', value)}
+                    placeholder="Select relationship"
+                  />
                   {form.household_relationship === 'other' && (
                     <label className="field">
                       <span>Please specify</span>
-                      <input className="input" value={form.household_relationship_other} onChange={setField('household_relationship_other')} />
+                      <input
+                        className="input"
+                        value={form.household_relationship_other}
+                        onChange={setField('household_relationship_other')}
+                        placeholder="Describe your relationship"
+                      />
                     </label>
                   )}
                 </>
@@ -597,165 +674,299 @@ export default function YouthForm() {
 
           {step.id === 'education' && (
             <>
-              <ChoiceSet legend="Current educational status">
-                <RadioGrid options={EDUCATIONAL_STATUS} value={form.educational_status} onChange={(value) => setValue('educational_status', value)} />
-              </ChoiceSet>
+              <SelectField
+                label="Current educational status"
+                options={EDUCATIONAL_STATUS}
+                value={form.educational_status}
+                onChange={(value) => setValue('educational_status', value)}
+                placeholder="Select educational status"
+              />
               <label className="field">
                 <span>School / institution (optional)</span>
-                <input className="input" value={form.school_name} onChange={setField('school_name')} />
+                <input
+                  className="input"
+                  value={form.school_name}
+                  onChange={setField('school_name')}
+                  placeholder="e.g. Mauban South Central School"
+                />
               </label>
               <label className="field">
                 <span>Course / strand / program (optional)</span>
-                <input className="input" value={form.course_strand} onChange={setField('course_strand')} />
+                <input
+                  className="input"
+                  value={form.course_strand}
+                  onChange={setField('course_strand')}
+                  placeholder="e.g. STEM, BSIT, Electrical Installation"
+                />
               </label>
-              <ChoiceSet legend="Interested in continuing education or further training?">
-                <RadioGrid options={CONTINUE_EDUCATION} value={form.continue_education} onChange={(value) => setValue('continue_education', value)} />
-              </ChoiceSet>
+              <SelectField
+                label="Interested in continuing education or further training?"
+                options={CONTINUE_EDUCATION}
+                value={form.continue_education}
+                onChange={(value) => setValue('continue_education', value)}
+                placeholder="Select an option"
+              />
             </>
           )}
 
           {step.id === 'employment' && (
             <>
-              <ChoiceSet legend="Current employment status">
-                <RadioGrid options={EMPLOYMENT_STATUS} value={form.employment_status} onChange={(value) => setValue('employment_status', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Interested in livelihood or entrepreneurship programs?">
-                <RadioGrid options={LIVELIHOOD_INTEREST} value={form.livelihood_interest} onChange={(value) => setValue('livelihood_interest', value)} compact />
-              </ChoiceSet>
-              <ChoiceSet legend="What opportunities would you like to access?" hint="Select all that apply">
-                <CheckGrid options={OPPORTUNITIES} values={form.opportunities} onToggle={(value) => toggleList('opportunities', value)} />
-              </ChoiceSet>
+              <SelectField
+                label="Current employment status"
+                options={EMPLOYMENT_STATUS}
+                value={form.employment_status}
+                onChange={(value) => setValue('employment_status', value)}
+                placeholder="Select employment status"
+              />
+              <SelectField
+                label="Interested in livelihood or entrepreneurship programs?"
+                options={LIVELIHOOD_INTEREST}
+                value={form.livelihood_interest}
+                onChange={(value) => setValue('livelihood_interest', value)}
+                placeholder="Select yes, no, or maybe"
+              />
+              <MultiSelectField
+                label="What opportunities would you like to access?"
+                hint="Select all that apply"
+                options={OPPORTUNITIES}
+                values={form.opportunities}
+                onChange={(values) => setList('opportunities', values)}
+                placeholder="Select an opportunity to add"
+              />
             </>
           )}
 
           {step.id === 'skills' && (
             <>
-              <ChoiceSet legend="Skills or talents you currently possess" hint="Select all that apply">
-                <CheckGrid options={SKILLS} values={form.skills} onToggle={(value) => toggleList('skills', value)} />
-              </ChoiceSet>
+              <MultiSelectField
+                label="Skills or talents you currently possess"
+                hint="Select all that apply"
+                options={SKILLS}
+                values={form.skills}
+                onChange={(values) => setList('skills', values)}
+                placeholder="Select a skill to add"
+              />
               <label className="field">
                 <span>Other skills or talents to share</span>
-                <textarea className="input" rows={3} value={form.other_skills} onChange={setField('other_skills')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.other_skills}
+                  onChange={setField('other_skills')}
+                  placeholder="List any other skills or talents not included above"
+                />
               </label>
-              <ChoiceSet legend="Skills you would like to develop" hint="Select all that apply">
-                <CheckGrid options={SKILLS_TO_DEVELOP} values={form.skills_to_develop} onToggle={(value) => toggleList('skills_to_develop', value)} />
-              </ChoiceSet>
+              <MultiSelectField
+                label="Skills you would like to develop"
+                hint="Select all that apply"
+                options={SKILLS_TO_DEVELOP}
+                values={form.skills_to_develop}
+                onChange={(values) => setList('skills_to_develop', values)}
+                placeholder="Select a skill to add"
+              />
             </>
           )}
 
           {step.id === 'interests' && (
             <>
-              <ChoiceSet legend="Activities you are interested in" hint="Select all that apply">
-                <CheckGrid options={INTERESTS} values={form.interests} onToggle={(value) => toggleList('interests', value)} />
-              </ChoiceSet>
+              <MultiSelectField
+                label="Activities you are interested in"
+                hint="Select all that apply"
+                options={INTERESTS}
+                values={form.interests}
+                onChange={(values) => setList('interests', values)}
+                placeholder="Select an activity to add"
+              />
               <label className="field">
                 <span>What do you usually enjoy during free time?</span>
-                <textarea className="input" rows={4} value={form.free_time} onChange={setField('free_time')} />
+                <textarea
+                  className="input"
+                  rows={4}
+                  value={form.free_time}
+                  onChange={setField('free_time')}
+                  placeholder="Describe hobbies, sports, creative work, or other activities you enjoy"
+                />
               </label>
             </>
           )}
 
           {step.id === 'volunteerism' && (
             <>
-              <ChoiceSet legend="Have you participated in volunteer or community service before?">
-                <RadioGrid options={YES_NO} value={form.volunteered_before} onChange={(value) => setValue('volunteered_before', value)} compact />
-              </ChoiceSet>
+              <SelectField
+                label="Have you participated in volunteer or community service before?"
+                options={YES_NO}
+                value={form.volunteered_before}
+                onChange={(value) => setValue('volunteered_before', value)}
+                placeholder="Select yes or no"
+              />
               {form.volunteered_before === 'yes' && (
-                <ChoiceSet legend="Activities participated in" hint="Select all that apply">
-                  <CheckGrid
-                    options={VOLUNTEER_ACTIVITIES}
-                    values={form.volunteer_activities}
-                    onToggle={(value) => toggleList('volunteer_activities', value)}
-                  />
-                </ChoiceSet>
-              )}
-              <ChoiceSet legend="What motivates you to volunteer?" hint="Select all that apply">
-                <CheckGrid
-                  options={VOLUNTEER_MOTIVATIONS}
-                  values={form.volunteer_motivations}
-                  onToggle={(value) => toggleList('volunteer_motivations', value)}
+                <MultiSelectField
+                  label="Activities participated in"
+                  hint="Select all that apply"
+                  options={VOLUNTEER_ACTIVITIES}
+                  values={form.volunteer_activities}
+                  onChange={(values) => setList('volunteer_activities', values)}
+                  placeholder="Select an activity to add"
                 />
-              </ChoiceSet>
-              <ChoiceSet legend="Are you interested in becoming a volunteer?">
-                <RadioGrid options={VOLUNTEER_INTEREST} value={form.volunteer_interest} onChange={(value) => setValue('volunteer_interest', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="How often can you participate?">
-                <RadioGrid options={VOLUNTEER_FREQUENCY} value={form.volunteer_frequency} onChange={(value) => setValue('volunteer_frequency', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Days generally available">
-                <CheckGrid options={AVAILABILITY_DAYS} values={form.availability_days} onToggle={(value) => toggleList('availability_days', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Time generally available">
-                <RadioGrid options={AVAILABILITY_TIME} value={form.availability_time} onChange={(value) => setValue('availability_time', value)} compact />
-              </ChoiceSet>
+              )}
+              <MultiSelectField
+                label="What motivates you to volunteer?"
+                hint="Select all that apply"
+                options={VOLUNTEER_MOTIVATIONS}
+                values={form.volunteer_motivations}
+                onChange={(values) => setList('volunteer_motivations', values)}
+                placeholder="Select a motivation to add"
+              />
+              <SelectField
+                label="Are you interested in becoming a volunteer?"
+                options={VOLUNTEER_INTEREST}
+                value={form.volunteer_interest}
+                onChange={(value) => setValue('volunteer_interest', value)}
+                placeholder="Select volunteer interest"
+              />
+              <SelectField
+                label="How often can you participate?"
+                options={VOLUNTEER_FREQUENCY}
+                value={form.volunteer_frequency}
+                onChange={(value) => setValue('volunteer_frequency', value)}
+                placeholder="Select frequency"
+              />
+              <MultiSelectField
+                label="Days generally available"
+                hint="Select all that apply"
+                options={AVAILABILITY_DAYS}
+                values={form.availability_days}
+                onChange={(values) => setList('availability_days', values)}
+                placeholder="Select a day to add"
+              />
+              <SelectField
+                label="Time generally available"
+                options={AVAILABILITY_TIME}
+                value={form.availability_time}
+                onChange={(value) => setValue('availability_time', value)}
+                placeholder="Select preferred time"
+              />
             </>
           )}
 
           {step.id === 'community' && (
             <>
-              <ChoiceSet legend="Most important issues affecting young people in your barangay" hint="Select up to five">
-                <CheckGrid
-                  options={COMMUNITY_ISSUES}
-                  values={form.community_issues}
-                  onToggle={(value) => toggleList('community_issues', value)}
-                  max={5}
-                />
-              </ChoiceSet>
+              <MultiSelectField
+                label="Most important issues affecting young people in your barangay"
+                hint="Select up to five"
+                options={COMMUNITY_ISSUES}
+                values={form.community_issues}
+                onChange={(values) => setList('community_issues', values)}
+                max={5}
+                placeholder="Select an issue to add"
+              />
               <label className="field">
                 <span>Programs or activities your barangay needs for its youth</span>
-                <textarea className="input" rows={3} value={form.barangay_programs_needed} onChange={setField('barangay_programs_needed')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.barangay_programs_needed}
+                  onChange={setField('barangay_programs_needed')}
+                  placeholder="e.g. sports leagues, skills training, mental health sessions"
+                />
               </label>
               <label className="field">
                 <span>Community project you would personally propose</span>
-                <textarea className="input" rows={3} value={form.proposed_project} onChange={setField('proposed_project')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.proposed_project}
+                  onChange={setField('proposed_project')}
+                  placeholder="Briefly describe a project you would like to lead or support"
+                />
               </label>
               <label className="field">
                 <span>Changes you would like to see for young people</span>
-                <textarea className="input" rows={3} value={form.desired_changes} onChange={setField('desired_changes')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.desired_changes}
+                  onChange={setField('desired_changes')}
+                  placeholder="Share the improvements you hope to see in your community"
+                />
               </label>
             </>
           )}
 
           {step.id === 'programs' && (
             <>
-              <ChoiceSet legend="KISLAP programs of interest" hint="Select all that apply">
-                <CheckGrid options={KISLAP_PROGRAMS} values={form.kislap_programs} onToggle={(value) => toggleList('kislap_programs', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Preferred contribution areas" hint="Select up to three">
-                <CheckGrid
-                  options={CONTRIBUTION_AREAS}
-                  values={form.contribution_areas}
-                  onToggle={(value) => toggleList('contribution_areas', value)}
-                  max={3}
-                />
-              </ChoiceSet>
+              <MultiSelectField
+                label="KISLAP programs of interest"
+                hint="Select all that apply"
+                options={KISLAP_PROGRAMS}
+                values={form.kislap_programs}
+                onChange={(values) => setList('kislap_programs', values)}
+                placeholder="Select a program to add"
+              />
+              <MultiSelectField
+                label="Preferred contribution areas"
+                hint="Select up to three"
+                options={CONTRIBUTION_AREAS}
+                values={form.contribution_areas}
+                onChange={(values) => setList('contribution_areas', values)}
+                max={3}
+                placeholder="Select a contribution area to add"
+              />
               <label className="field">
                 <span>What would encourage you to become an active youth volunteer?</span>
-                <textarea className="input" rows={3} value={form.volunteer_encouragement} onChange={setField('volunteer_encouragement')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.volunteer_encouragement}
+                  onChange={setField('volunteer_encouragement')}
+                  placeholder="e.g. training, mentorship, flexible schedules, recognition"
+                />
               </label>
             </>
           )}
 
           {step.id === 'membership' && (
             <>
-              <ChoiceSet legend="Before this survey, were you familiar with KISLAP Youth Volunteers?">
-                <RadioGrid options={KISLAP_FAMILIARITY} value={form.kislap_familiarity} onChange={(value) => setValue('kislap_familiarity', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="After learning about KISLAP, are you interested in becoming part of the organization?">
-                <RadioGrid options={MEMBERSHIP_INTEREST} value={form.membership_interest} onChange={(value) => setValue('membership_interest', value)} />
-              </ChoiceSet>
-              <ChoiceSet legend="Would you like KISLAP to contact you about activities, volunteer opportunities, and orientations?">
-                <RadioGrid options={YES_NO} value={form.contact_opt_in} onChange={(value) => setValue('contact_opt_in', value)} compact />
-              </ChoiceSet>
+              <SelectField
+                label="Before this survey, were you familiar with KISLAP Youth Volunteers?"
+                options={KISLAP_FAMILIARITY}
+                value={form.kislap_familiarity}
+                onChange={(value) => setValue('kislap_familiarity', value)}
+                placeholder="Select familiarity"
+              />
+              <SelectField
+                label="After learning about KISLAP, are you interested in becoming part of the organization?"
+                options={MEMBERSHIP_INTEREST}
+                value={form.membership_interest}
+                onChange={(value) => setValue('membership_interest', value)}
+                placeholder="Select membership interest"
+              />
+              <SelectField
+                label="Would you like KISLAP to contact you about activities, volunteer opportunities, and orientations?"
+                options={YES_NO}
+                value={form.contact_opt_in}
+                onChange={(value) => setValue('contact_opt_in', value)}
+                placeholder="Select yes or no"
+              />
               {form.contact_opt_in === 'yes' && (
                 <div className="field-row">
                   <label className="field">
                     <span>Preferred contact method</span>
-                    <input className="input" value={form.preferred_contact_method} onChange={setField('preferred_contact_method')} placeholder="SMS, call, Facebook, email" />
+                    <input
+                      className="input"
+                      value={form.preferred_contact_method}
+                      onChange={setField('preferred_contact_method')}
+                      placeholder="SMS, call, Facebook, email"
+                    />
                   </label>
                   <label className="field">
                     <span>Contact details</span>
-                    <input className="input" value={form.preferred_contact_details} onChange={setField('preferred_contact_details')} />
+                    <input
+                      className="input"
+                      value={form.preferred_contact_details}
+                      onChange={setField('preferred_contact_details')}
+                      placeholder="Phone number, Facebook name, or email"
+                    />
                   </label>
                 </div>
               )}
@@ -766,25 +977,35 @@ export default function YouthForm() {
             <>
               <label className="field">
                 <span>Suggestions to improve youth programs in Mauban</span>
-                <textarea className="input" rows={3} value={form.suggestions} onChange={setField('suggestions')} />
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.suggestions}
+                  onChange={setField('suggestions')}
+                  placeholder="Share ideas that could help improve youth programs and services"
+                />
               </label>
               <label className="field">
                 <span>Anything else about your interests, abilities, or aspirations?</span>
-                <textarea className="input" rows={3} value={form.additional_notes} onChange={setField('additional_notes')} />
-              </label>
-              <ChoiceSet
-                legend="Optional: KISLAP communications agreement"
-                hint="Agreeing does not make you a member. You may withdraw later."
-              >
-                <RadioGrid
-                  options={[
-                    ['yes', 'Yes, I agree to receive KISLAP communications.'],
-                    ['no', 'No, I do not wish to receive KISLAP communications.'],
-                  ]}
-                  value={form.communications_agreement}
-                  onChange={(value) => setValue('communications_agreement', value)}
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={form.additional_notes}
+                  onChange={setField('additional_notes')}
+                  placeholder="Optional notes about your goals, strengths, or other information"
                 />
-              </ChoiceSet>
+              </label>
+              <SelectField
+                label="Optional: KISLAP communications agreement"
+                hint="Agreeing does not make you a member. You may withdraw later."
+                options={[
+                  ['yes', 'Yes, I agree to receive KISLAP communications.'],
+                  ['no', 'No, I do not wish to receive KISLAP communications.'],
+                ]}
+                value={form.communications_agreement}
+                onChange={(value) => setValue('communications_agreement', value)}
+                placeholder="Select your preference"
+              />
               <div className="youth-privacy-note">
                 <h2>Privacy notice</h2>
                 <p>
