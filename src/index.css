@@ -5667,7 +5667,15 @@ select.input {
 }
 
 .youth-kpi-strip.is-analytics {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.youth-kpi-compact article {
+  padding: 14px 16px;
+}
+
+.youth-kpi-compact strong {
+  font-size: 1.4rem;
 }
 
 .youth-kpi-strip article {
@@ -5933,10 +5941,16 @@ select.input {
   margin-bottom: 16px;
 }
 
+.youth-kpi-compact article strong small {
+  margin-left: 4px;
+  font-size: 0.72em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .youth-map-panel {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 16px;
+  gap: 12px;
   margin: 8px 0 22px;
   padding: 16px;
   border: 1px solid var(--border);
@@ -5945,35 +5959,190 @@ select.input {
   box-shadow: var(--shadow-sm);
 }
 
-.youth-map-frame,
-.youth-leaflet {
-  min-height: 360px;
-  border-radius: 14px;
-  overflow: hidden;
+.youth-map-panel-pro {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
-.youth-chart-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.youth-map-panel.is-fullscreen {
+  border-radius: 0;
+  margin: 0;
+  min-height: 100vh;
+  padding: 16px;
+  background: #fff;
+}
+
+.youth-map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.youth-map-toolbar h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.youth-map-frame,
+.youth-leaflet {
+  min-height: 380px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.youth-map-panel.is-fullscreen .youth-map-frame,
+.youth-map-panel.is-fullscreen .youth-leaflet {
+  min-height: calc(100vh - 140px);
+}
+
+.youth-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.youth-map-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.youth-map-legend i.is-covered {
+  background: #14b8a6;
+}
+
+.youth-map-legend i.is-empty {
+  background: #cbd5e1;
+}
+
+.youth-analytics-section {
   margin-bottom: 22px;
 }
 
-.youth-chart-card {
-  padding: 14px 16px 8px;
+.youth-section-heading {
+  margin-bottom: 12px;
+}
+
+.youth-section-heading h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.youth-analytics-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.youth-analytics-grid.demographics {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+.youth-analytics-grid.twocol {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.youth-analytics-grid.engagement {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.youth-analytics-grid.threecol {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.youth-stat-card {
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: #fff;
   box-shadow: var(--shadow-sm);
 }
 
-.youth-chart-card h2 {
-  margin: 0 0 8px;
+.youth-stat-card > header,
+.youth-table-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.youth-stat-card > header h3,
+.youth-table-heading h2 {
+  margin: 0;
   font-size: 1rem;
+}
+
+.youth-stat-card > header span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.youth-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.youth-rank-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.youth-rank-meta strong {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.youth-rank-meta em {
+  font-style: normal;
+  color: #0f766e;
+  font-weight: 800;
+  min-width: 1.1rem;
+}
+
+.youth-rank-meta span {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.youth-rank-track {
+  height: 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.youth-rank-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
 }
 
 .youth-barangay-table {
   margin-bottom: 24px;
+}
+
+.youth-barangay-table .data-table tr.is-empty-row td {
+  color: var(--muted);
 }
 
 .choice.is-disabled {
@@ -6125,8 +6294,10 @@ select.input {
     min-height: 40px;
   }
 
-  .youth-chart-grid,
-  .youth-map-panel,
+  .youth-analytics-grid.demographics,
+  .youth-analytics-grid.twocol,
+  .youth-analytics-grid.engagement,
+  .youth-analytics-grid.threecol,
   .youth-review-grid {
     grid-template-columns: 1fr;
   }
@@ -6136,12 +6307,21 @@ select.input {
     gap: 12px;
   }
 
+  .youth-map-toolbar {
+    flex-direction: column;
+  }
+
+  .youth-map-toolbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .youth-map-frame,
   .youth-leaflet {
     min-height: 260px;
   }
 
-  .youth-chart-card {
+  .youth-stat-card {
     padding: 12px;
   }
 
