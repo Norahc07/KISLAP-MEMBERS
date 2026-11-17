@@ -5648,6 +5648,17 @@ select.input {
   align-items: flex-start;
 }
 
+.youth-nav-label-short {
+  display: none;
+}
+
+.youth-quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .youth-kpi-strip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -5965,15 +5976,63 @@ select.input {
   margin-bottom: 24px;
 }
 
-.youth-analytics.is-present .youth-kpi-strip article,
+body.youth-present-mode .sidebar,
+body.youth-present-mode .mobile-bar,
+body.youth-present-mode .sidebar-scrim {
+  display: none !important;
+}
+
+body.youth-present-mode .app-shell {
+  display: block;
+}
+
+body.youth-present-mode .main {
+  margin: 0 !important;
+  padding: 18px 22px 28px !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.youth-analytics.is-present {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 34%),
+    linear-gradient(180deg, #f8fafc 0%, #eef6f3 100%);
+  padding: 8px 4px 24px;
+}
+
+.youth-analytics.is-present .page-header h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.youth-analytics.is-present .youth-kpi-strip article {
+  padding: 20px 18px;
+  border-color: #cbd5e1;
+  box-shadow: none;
+}
+
+.youth-analytics.is-present .youth-kpi-strip strong {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
 .youth-analytics.is-present .youth-chart-card,
 .youth-analytics.is-present .youth-map-panel {
   box-shadow: none;
-  border-color: #d1d5db;
+  border-color: #cbd5e1;
 }
 
-.youth-analytics.is-present .page-header .toolbar .btn-soft:first-child {
-  display: none;
+.youth-analytics.is-present .youth-map-frame,
+.youth-analytics.is-present .youth-leaflet {
+  min-height: 440px;
+}
+
+.youth-analytics.is-present .youth-chart-body .recharts-wrapper {
+  font-size: 0.95rem;
+}
+
+.youth-present-hint {
+  margin: -4px 0 14px;
+  font-weight: 650;
 }
 
 .choice.is-disabled {
@@ -6004,33 +6063,230 @@ select.input {
 }
 
 @media (max-width: 960px) {
+  .youth-page {
+    gap: 14px;
+  }
+
+  .youth-page .page-header {
+    gap: 12px;
+  }
+
+  .youth-page .page-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .youth-page .page-header .muted {
+    font-size: 0.9rem;
+  }
+
+  .youth-quick-nav {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .youth-quick-nav .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 42px;
+    padding-inline: 12px;
+  }
+
+  .youth-nav-label {
+    display: none;
+  }
+
+  .youth-nav-label-short {
+    display: inline;
+  }
+
   .youth-kpi-strip,
-  .youth-kpi-strip.is-analytics,
+  .youth-kpi-strip.is-analytics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 14px;
+  }
+
+  .youth-kpi-strip article {
+    padding: 12px 12px;
+    border-radius: 14px;
+  }
+
+  .youth-kpi-strip strong {
+    font-size: 1.25rem;
+  }
+
+  .youth-kpi-strip span {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .youth-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .youth-search {
+    grid-column: 1 / -1;
+  }
+
+  .youth-filter-select,
+  .youth-search .input {
+    min-height: 44px;
+    font-size: 0.92rem;
+  }
+
+  .youth-filter-actions {
+    gap: 8px;
+  }
+
+  .youth-filter-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .youth-willing-toggle {
+    flex: 1 1 100%;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .youth-barangay-group > header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+
+  .youth-barangay-group li {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .youth-row-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .youth-row-actions .btn {
+    flex: 1;
+    justify-content: center;
+    min-height: 40px;
+  }
+
   .youth-chart-grid,
   .youth-map-panel,
   .youth-review-grid {
     grid-template-columns: 1fr;
   }
 
+  .youth-map-panel {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .youth-map-frame,
+  .youth-leaflet {
+    min-height: 260px;
+  }
+
+  .youth-chart-card {
+    padding: 12px;
+  }
+
+  .youth-analytics-actions {
+    width: 100%;
+  }
+
+  .youth-analytics .table-wrap {
+    margin: 0 -2px;
+  }
+
+  .youth-page .register-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .youth-page .register-steps {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .youth-page .register-steps button {
+    min-height: 58px;
+  }
+
+  .youth-page .register-steps button small {
+    display: none;
+  }
+
+  .youth-breadcrumbs {
+    gap: 8px;
+  }
+
+  .youth-breadcrumb-trail {
+    font-size: 0.82rem;
+  }
+
+  .youth-page .register-card {
+    padding: 14px;
+  }
+
+  .youth-page .register-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .youth-page .register-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 560px) {
+  .youth-kpi-strip,
+  .youth-kpi-strip.is-analytics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .youth-filter-row {
-    display: flex;
-    flex-wrap: nowrap;
+    grid-template-columns: 1fr;
+  }
+
+  .youth-page .register-steps {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(132px, 70%);
     overflow-x: auto;
     padding-bottom: 4px;
   }
 
-  .youth-search {
-    flex: 1 0 180px;
+  .youth-analytics.is-present {
+    padding: 4px 0 16px;
   }
 
-  .youth-filter-select {
-    flex: 0 0 150px;
-    width: 150px;
+  .youth-analytics.is-present .youth-map-frame,
+  .youth-analytics.is-present .youth-leaflet {
+    min-height: 240px;
   }
 
-  .youth-barangay-group li {
-    flex-direction: column;
-    align-items: flex-start;
+  body.youth-present-mode .main {
+    padding: 12px 10px 20px !important;
   }
 }
 

@@ -183,24 +183,29 @@ export default function YouthProfiles() {
             Mauban youth collection by barangay — separate from official KISLAP members.
           </p>
         </div>
-        <div className="toolbar">
+        <div className="toolbar youth-quick-nav" aria-label="Youth profiling shortcuts">
           {canCreate && (
             <Link to="/youth/new" className="btn btn-primary">
-              <Plus size={16} /> Collect profile
+              <Plus size={16} /> <span className="youth-nav-label">Collect profile</span>
+              <span className="youth-nav-label-short">Collect</span>
             </Link>
           )}
           <Link to="/youth/willing" className="btn btn-soft">
-            <Users size={16} /> Willing to join
+            <Users size={16} /> <span className="youth-nav-label">Willing to join</span>
+            <span className="youth-nav-label-short">Willing</span>
           </Link>
           <Link to="/youth/pwd" className="btn btn-soft">
-            <HeartHandshake size={16} /> PWD youth
+            <HeartHandshake size={16} /> <span className="youth-nav-label">PWD youth</span>
+            <span className="youth-nav-label-short">PWD</span>
           </Link>
           <Link to="/youth/upcoming-sk" className="btn btn-soft">
-            <Vote size={16} /> Upcoming SK (14)
+            <Vote size={16} /> <span className="youth-nav-label">Upcoming SK (14)</span>
+            <span className="youth-nav-label-short">SK 14</span>
           </Link>
           {isAdmin && (
             <Link to="/youth/analytics" className="btn btn-soft">
-              <MapPinned size={16} /> Analytics
+              <MapPinned size={16} /> <span className="youth-nav-label">Analytics</span>
+              <span className="youth-nav-label-short">Stats</span>
             </Link>
           )}
         </div>
