@@ -337,7 +337,7 @@ export default function YouthAnalytics() {
                   <CircleMarker
                     key={point.name}
                     center={[point.lat, point.lng]}
-                    radius={Number(point.total) ? 7 + (Number(point.total) / maxCount) * 16 : 5}
+                    radius={Number(point.total) ? 5 + Math.sqrt(Number(point.total) / maxCount) * 3 : 3.5}
                     pathOptions={{
                       color: Number(point.total) ? '#0f766e' : '#94a3b8',
                       fillColor: Number(point.total) ? '#14b8a6' : '#cbd5e1',
