@@ -52,8 +52,27 @@ export default function Layout() {
         ...(canAccessPage('assign') ? [{ to: '/assign', label: 'Assign Roles', icon: Network }] : []),
         ...(canAccessPage('users') ? [{ to: '/users', label: 'Users', icon: IdCard }] : []),
         ...(canAccessPage('tracker') ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
-        ...(canAccessPage('youth_profiling') ? [{ to: '/youth', label: 'Youth Profiling', icon: MapPinned }] : []),
-        ...(isAdmin ? [{ to: '/youth/analytics', label: 'Youth Analytics', icon: ChartColumn }] : []),
+        ...(canAccessPage('youth_profiling')
+          ? [
+              {
+                to: '/youth',
+                label: 'Youth Profiling',
+                icon: MapPinned,
+                // Stay active on youth collection routes, but not on admin analytics.
+                match: (path) => path === '/youth' || (path.startsWith('/youth/') && !path.startsWith('/youth/analytics')),
+              },
+            ]
+          : []),
+        ...(isAdmin
+          ? [
+              {
+                to: '/youth/analytics',
+                label: 'Youth Analytics',
+                icon: ChartColumn,
+                match: (path) => path === '/youth/analytics' || path.startsWith('/youth/analytics/'),
+              },
+            ]
+          : []),
         ...(isAdmin ? [{ to: '/settings', label: 'Settings', icon: Settings }] : []),
         ...(canAccessPage('audit') ? [{ to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
       ]
@@ -93,8 +112,17 @@ export default function Layout() {
         </div>
 
         <nav className="nav">
-          {nav.map(({ to, label, icon: Icon, end }) => (
-            <NavLink key={to} to={to} end={end} className="nav-link" onClick={() => setOpen(false)}>
+          {nav.map(({ to, label, icon: Icon, end, match }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) => {
+                const active = match ? match(location.pathname) : isActive
+                return active ? 'nav-link active' : 'nav-link'
+              }}
+              onClick={() => setOpen(false)}
+            >
               <Icon size={19} />
               <span>{label}</span>
             </NavLink>
