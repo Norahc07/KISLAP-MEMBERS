@@ -428,6 +428,7 @@ grant execute on function public.upsert_youth_profile(jsonb) to authenticated;
 -- Admin-only aggregate counts by barangay (no PII)
 -- interested_to_join = youth who answered volunteer interest Yes
 -- official_members = enrolled KISLAP members (approved registration + tracker seat) by barangay
+drop function if exists public.youth_profiling_barangay_stats();
 create or replace function public.youth_profiling_barangay_stats()
 returns table (
   barangay text,
