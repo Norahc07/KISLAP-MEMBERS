@@ -234,16 +234,40 @@ export default function YouthForm() {
     }
   }
 
+  const crumbLabel = id ? 'Edit profile' : 'Collect profile'
+
   if (loading) {
     return (
-      <div className="page">
-        <p className="muted">Loading youth profile?</p>
+      <div className="page youth-page">
+        <div className="youth-breadcrumbs">
+          <Link to="/youth" className="btn btn-soft">
+            <ArrowLeft size={16} /> Back
+          </Link>
+          <ol className="youth-breadcrumb-trail" aria-label="Breadcrumb">
+            <li>
+              <Link to="/youth">Youth Profiling</Link>
+            </li>
+            <li aria-current="page">{crumbLabel}</li>
+          </ol>
+        </div>
+        <p className="muted">Loading youth profile...</p>
       </div>
     )
   }
 
   return (
     <div className="page youth-page">
+      <div className="youth-breadcrumbs">
+        <Link to="/youth" className="btn btn-soft">
+          <ArrowLeft size={16} /> Back
+        </Link>
+        <ol className="youth-breadcrumb-trail" aria-label="Breadcrumb">
+          <li>
+            <Link to="/youth">Youth Profiling</Link>
+          </li>
+          <li aria-current="page">{crumbLabel}</li>
+        </ol>
+      </div>
       <div className="register-layout">
         <ol className="register-steps">
           {steps.map((item, index) => (

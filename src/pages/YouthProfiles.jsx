@@ -239,70 +239,74 @@ export default function YouthProfiles() {
         </article>
       </section>
 
-      <div className="toolbar youth-filters">
-        <label className="field youth-search">
-          <Search size={16} />
-          <input
-            className="input"
-            placeholder="Search name or barangay"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-        <select className="input" value={barangay} onChange={(event) => setBarangay(event.target.value)}>
-          <option value="">All barangays</option>
-          {MAUBAN_BARANGAYS.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={ageBand} onChange={(event) => setAgeBand(event.target.value)}>
-          <option value="">All ages</option>
-          {AGE_BANDS.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={volunteer} onChange={(event) => setVolunteer(event.target.value)}>
-          <option value="">All volunteer interest</option>
-          {VOLUNTEER_INTEREST.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={contribution} onChange={(event) => setContribution(event.target.value)}>
-          <option value="">All contribution areas</option>
-          {CONTRIBUTION_AREAS.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <label className="check-row youth-willing-toggle">
-          <input type="checkbox" checked={pwdOnly} onChange={(event) => setPwdOnly(event.target.checked)} />
-          <span>PWD only</span>
-        </label>
-        <label className="check-row youth-willing-toggle">
-          <input
-            type="checkbox"
-            checked={upcomingSkOnly || ageBand === UPCOMING_SK_AGE_BAND}
-            onChange={(event) => {
-              setUpcomingSkOnly(event.target.checked)
-              if (event.target.checked) setAgeBand(UPCOMING_SK_AGE_BAND)
-              else if (ageBand === UPCOMING_SK_AGE_BAND) setAgeBand('')
-            }}
-          />
-          <span>Upcoming SK (14) only</span>
-        </label>
-        <button type="button" className="btn btn-soft" onClick={handleSync} disabled={!online || syncing}>
-          <RefreshCw size={16} /> {syncing ? 'Syncing…' : 'Sync now'}
-        </button>
-        <button type="button" className="btn btn-soft" onClick={exportCsv} disabled={!filtered.length}>
-          <Download size={16} /> Export CSV
-        </button>
+      <div className="youth-filters">
+        <div className="youth-filter-row">
+          <label className="field youth-search">
+            <Search size={16} />
+            <input
+              className="input"
+              placeholder="Search name or barangay"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <select className="input youth-filter-select" value={barangay} onChange={(event) => setBarangay(event.target.value)}>
+            <option value="">All barangays</option>
+            {MAUBAN_BARANGAYS.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <select className="input youth-filter-select" value={ageBand} onChange={(event) => setAgeBand(event.target.value)}>
+            <option value="">All ages</option>
+            {AGE_BANDS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select className="input youth-filter-select" value={volunteer} onChange={(event) => setVolunteer(event.target.value)}>
+            <option value="">All volunteer interest</option>
+            {VOLUNTEER_INTEREST.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select className="input youth-filter-select" value={contribution} onChange={(event) => setContribution(event.target.value)}>
+            <option value="">All contribution areas</option>
+            {CONTRIBUTION_AREAS.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="youth-filter-actions">
+          <label className="check-row youth-willing-toggle">
+            <input type="checkbox" checked={pwdOnly} onChange={(event) => setPwdOnly(event.target.checked)} />
+            <span>PWD only</span>
+          </label>
+          <label className="check-row youth-willing-toggle">
+            <input
+              type="checkbox"
+              checked={upcomingSkOnly || ageBand === UPCOMING_SK_AGE_BAND}
+              onChange={(event) => {
+                setUpcomingSkOnly(event.target.checked)
+                if (event.target.checked) setAgeBand(UPCOMING_SK_AGE_BAND)
+                else if (ageBand === UPCOMING_SK_AGE_BAND) setAgeBand('')
+              }}
+            />
+            <span>Upcoming SK (14) only</span>
+          </label>
+          <button type="button" className="btn btn-soft" onClick={handleSync} disabled={!online || syncing}>
+            <RefreshCw size={16} /> {syncing ? 'Syncing…' : 'Sync now'}
+          </button>
+          <button type="button" className="btn btn-soft" onClick={exportCsv} disabled={!filtered.length}>
+            <Download size={16} /> Export CSV
+          </button>
+        </div>
       </div>
 
       {loading ? (
