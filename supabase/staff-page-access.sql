@@ -10,6 +10,8 @@
 --   assign, assign_write
 --   tracker, tracker_write
 --   users, audit
+--   youth_profiling, youth_profiling_create, youth_profiling_update, youth_profiling_delete
+--   (youth keys are also enforced/updated in supabase/youth-profiling.sql)
 
 create table if not exists public.staff_page_access (
   member_no int primary key references public.membership_tracker(member_no) on delete cascade,
@@ -126,7 +128,8 @@ declare
     'members', 'members_create', 'members_update', 'members_delete',
     'assign', 'assign_write',
     'tracker', 'tracker_write',
-    'users', 'audit'
+    'users', 'audit',
+    'youth_profiling', 'youth_profiling_create', 'youth_profiling_update', 'youth_profiling_delete'
   ];
   v_name text;
 begin

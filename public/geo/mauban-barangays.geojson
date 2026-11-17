@@ -1,0 +1,525 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bagong Bayan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7308,
+          14.1911
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Daungan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.728,
+          14.1935
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lual"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7335,
+          14.189
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mabato"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7275,
+          14.1885
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rizaliana"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.732,
+          14.1928
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sadsaran"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7355,
+          14.1905
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Abo-abo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.71,
+          14.205
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Alitap"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.695,
+          14.175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Baao"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.745,
+          14.21
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Balaybalay"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.755,
+          14.18
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bato"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.68,
+          14.2
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cagbalete I"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.82,
+          14.25
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cagbalete II"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.84,
+          14.26
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cagsiay I"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.76,
+          14.16
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cagsiay II"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.78,
+          14.14
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cagsiay III"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.8,
+          14.12
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Concepcion"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.72,
+          14.17
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Liwayway"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.74,
+          14.22
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lual Rural"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.74,
+          14.185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lucutan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7,
+          14.22
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Luya-luya"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.715,
+          14.16
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Macasin"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.69,
+          14.185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Polo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.725,
+          14.2
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Remedios I"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.705,
+          14.195
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Remedios II"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.698,
+          14.21
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rosario"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.76,
+          14.2
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Gabriel"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.715,
+          14.175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Isidro"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.735,
+          14.17
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Jose"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.75,
+          14.15
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Lorenzo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.722,
+          14.185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Miguel"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.745,
+          14.175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Rafael"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.71,
+          14.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Roque"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.765,
+          14.185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Vicente"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7,
+          14.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Santa Lucia"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.755,
+          14.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Santo Angel"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.735,
+          14.205
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Santo Niño"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.72,
+          14.15
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Santol"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.74,
+          14.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Soledad"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.73,
+          14.21
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tapucan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.715,
+          14.22
+        ]
+      }
+    }
+  ]
+}

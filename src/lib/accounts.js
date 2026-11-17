@@ -68,6 +68,17 @@ export const STAFF_ACCESS = [
     nav: true,
     actions: [],
   },
+  {
+    key: 'youth_profiling',
+    label: 'Youth Profiling',
+    path: '/youth',
+    nav: true,
+    actions: [
+      { key: 'youth_profiling_create', label: 'Collect / add' },
+      { key: 'youth_profiling_update', label: 'Edit' },
+      { key: 'youth_profiling_delete', label: 'Delete' },
+    ],
+  },
 ]
 
 export const STAFF_PAGES = STAFF_ACCESS.filter((page) => page.nav)

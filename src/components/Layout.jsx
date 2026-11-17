@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, CalendarDays, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, CalendarDays, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard, MapPinned, ChartColumn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 import RegisteredVoterPrompt from './RegisteredVoterPrompt'
@@ -52,6 +52,8 @@ export default function Layout() {
         ...(canAccessPage('assign') ? [{ to: '/assign', label: 'Assign Roles', icon: Network }] : []),
         ...(canAccessPage('users') ? [{ to: '/users', label: 'Users', icon: IdCard }] : []),
         ...(canAccessPage('tracker') ? [{ to: '/tracker', label: 'Tracker', icon: ClipboardCheck }] : []),
+        ...(canAccessPage('youth_profiling') ? [{ to: '/youth', label: 'Youth Profiling', icon: MapPinned }] : []),
+        ...(isAdmin ? [{ to: '/youth/analytics', label: 'Youth Analytics', icon: ChartColumn }] : []),
         ...(isAdmin ? [{ to: '/settings', label: 'Settings', icon: Settings }] : []),
         ...(canAccessPage('audit') ? [{ to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
       ]

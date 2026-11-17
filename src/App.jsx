@@ -15,6 +15,11 @@ import ChangePassword from './pages/ChangePassword'
 import Landing from './pages/Landing'
 import Documents from './pages/Documents'
 import CalendarPage from './pages/Calendar'
+import YouthProfiles from './pages/YouthProfiles'
+import YouthForm from './pages/YouthForm'
+import YouthWilling from './pages/YouthWilling'
+import YouthPwd from './pages/YouthPwd'
+import YouthAnalytics from './pages/YouthAnalytics'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
@@ -168,6 +173,54 @@ export default function App() {
           element={
             <RequirePage page="audit">
               <AuditLog />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthProfiles />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth/new"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthForm />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth/willing"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthWilling />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth/pwd"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthPwd />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth/analytics"
+          element={
+            <RequireAdmin>
+              <YouthAnalytics />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="youth/:id"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthForm />
             </RequirePage>
           }
         />
