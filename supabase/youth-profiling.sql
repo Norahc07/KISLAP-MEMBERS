@@ -426,12 +426,14 @@ $$;
 grant execute on function public.upsert_youth_profile(jsonb) to authenticated;
 
 -- Admin-only aggregate counts by barangay (no PII)
+-- interested_to_join = youth who answered volunteer interest Yes
+-- official_members = enrolled KISLAP members (approved registration + tracker seat) by barangay
 create or replace function public.youth_profiling_barangay_stats()
 returns table (
   barangay text,
   total bigint,
-  volunteer_yes bigint,
-  membership_apply bigint,
+  interested_to_join bigint,
+  official_members bigint,
   contact_opt_in_yes bigint,
   pwd_yes bigint
 )
@@ -445,16 +447,36 @@ begin
     raise exception 'Only the admin can view youth profiling analytics.';
   end if;
   return query
+  with youth as (
+    select
+      coalesce(nullif(btrim(p.barangay), ''), 'Unspecified') as barangay,
+      count(*)::bigint as total,
+      count(*) filter (where p.volunteer_interest = 'yes')::bigint as interested_to_join,
+      count(*) filter (where p.contact_opt_in = 'yes')::bigint as contact_opt_in_yes,
+      count(*) filter (where p.pwd = 'yes')::bigint as pwd_yes
+    from public.youth_profiles p
+    where p.status = 'submitted'
+    group by 1
+  ),
+  members as (
+    select
+      coalesce(nullif(btrim(r.barangay), ''), 'Unspecified') as barangay,
+      count(*)::bigint as official_members
+    from public.registrations r
+    inner join public.membership_tracker t on t.member_no = r.member_no
+    where r.application_status = 'approved'
+      and t.member_id is not null
+    group by 1
+  )
   select
-    coalesce(nullif(btrim(p.barangay), ''), 'Unspecified') as barangay,
-    count(*)::bigint as total,
-    count(*) filter (where p.volunteer_interest = 'yes')::bigint as volunteer_yes,
-    count(*) filter (where p.membership_interest = 'apply')::bigint as membership_apply,
-    count(*) filter (where p.contact_opt_in = 'yes')::bigint as contact_opt_in_yes,
-    count(*) filter (where p.pwd = 'yes')::bigint as pwd_yes
-  from public.youth_profiles p
-  where p.status = 'submitted'
-  group by 1
+    coalesce(y.barangay, m.barangay) as barangay,
+    coalesce(y.total, 0)::bigint as total,
+    coalesce(y.interested_to_join, 0)::bigint as interested_to_join,
+    coalesce(m.official_members, 0)::bigint as official_members,
+    coalesce(y.contact_opt_in_yes, 0)::bigint as contact_opt_in_yes,
+    coalesce(y.pwd_yes, 0)::bigint as pwd_yes
+  from youth y
+  full outer join members m on m.barangay = y.barangay
   order by 1;
 end;
 $$;

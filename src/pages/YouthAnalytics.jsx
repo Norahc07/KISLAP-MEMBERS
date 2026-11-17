@@ -187,7 +187,13 @@ export default function YouthAnalytics() {
     const counts = new Map(barangayStats.map((row) => [row.barangay, row]))
     return MAUBAN_BARANGAYS.map((name) => {
       const coords = MAUBAN_BARANGAY_COORDS[name]
-      const stats = counts.get(name) || { total: 0, volunteer_yes: 0, membership_apply: 0, contact_opt_in_yes: 0, pwd_yes: 0 }
+      const stats = counts.get(name) || {
+        total: 0,
+        interested_to_join: 0,
+        official_members: 0,
+        contact_opt_in_yes: 0,
+        pwd_yes: 0,
+      }
       return {
         name,
         lng: coords?.[0],
@@ -211,8 +217,8 @@ export default function YouthAnalytics() {
       return {
         barangay: name,
         total: row?.total || 0,
-        volunteer_yes: row?.volunteer_yes || 0,
-        membership_apply: row?.membership_apply || 0,
+        interested_to_join: row?.interested_to_join || row?.volunteer_yes || 0,
+        official_members: row?.official_members || 0,
         contact_opt_in_yes: row?.contact_opt_in_yes || 0,
         pwd_yes: row?.pwd_yes || 0,
       }
@@ -223,8 +229,8 @@ export default function YouthAnalytics() {
     const csv = toCsv(barangayRows, [
       { key: 'barangay', label: 'Barangay' },
       { key: 'total', label: 'Total' },
-      { key: 'volunteer_yes', label: 'Volunteer yes' },
-      { key: 'membership_apply', label: 'Membership apply' },
+      { key: 'interested_to_join', label: 'Interested to Join' },
+      { key: 'official_members', label: 'Member' },
       { key: 'contact_opt_in_yes', label: 'Contact opt-in' },
       { key: 'pwd_yes', label: 'PWD yes' },
     ])
@@ -350,9 +356,9 @@ export default function YouthAnalytics() {
                       <br />
                       Profiles: {point.total || 0}
                       <br />
-                      Volunteer yes: {point.volunteer_yes || 0}
+                      Interested to Join: {point.interested_to_join || point.volunteer_yes || 0}
                       <br />
-                      Membership apply: {point.membership_apply || 0}
+                      Member: {point.official_members || 0}
                       <br />
                       PWD: {point.pwd_yes || 0}
                     </Popup>
@@ -462,7 +468,9 @@ export default function YouthAnalytics() {
             <header className="youth-table-heading">
               <div>
                 <h2>Barangay statistical records</h2>
-                <p className="muted">Complete 40-barangay register sorted by profile count.</p>
+                <p className="muted">
+                  Profiled youth, interest to join, and official KISLAP members by barangay.
+                </p>
               </div>
             </header>
             <div className="table-wrap">
@@ -472,20 +480,23 @@ export default function YouthAnalytics() {
                     <th>#</th>
                     <th>Barangay</th>
                     <th>Total</th>
-                    <th>Volunteer</th>
-                    <th>Membership</th>
+                    <th>Interested to Join</th>
+                    <th>Member</th>
                     <th>Contact</th>
                     <th>PWD</th>
                   </tr>
                 </thead>
                 <tbody>
                   {barangayRows.map((row, index) => (
-                    <tr key={row.barangay} className={row.total ? '' : 'is-empty-row'}>
+                    <tr
+                      key={row.barangay}
+                      className={row.total || row.official_members ? '' : 'is-empty-row'}
+                    >
                       <td>{index + 1}</td>
                       <td>{row.barangay}</td>
                       <td>{row.total}</td>
-                      <td>{row.volunteer_yes}</td>
-                      <td>{row.membership_apply}</td>
+                      <td>{row.interested_to_join}</td>
+                      <td>{row.official_members}</td>
                       <td>{row.contact_opt_in_yes}</td>
                       <td>{row.pwd_yes}</td>
                     </tr>
