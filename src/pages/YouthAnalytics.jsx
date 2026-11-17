@@ -29,6 +29,7 @@ import {
   countBy,
   downloadCsv,
   isPwdYouth,
+  isUpcomingSkVoter,
   isWillingMember,
   labelOf,
   toCsv,
@@ -88,6 +89,7 @@ export default function YouthAnalytics() {
     const membership = rows.filter(isWillingMember).length
     const contact = rows.filter((row) => row.contact_opt_in === 'yes').length
     const pwd = rows.filter(isPwdYouth).length
+    const upcomingSk = rows.filter(isUpcomingSkVoter).length
     const pct = (n) => (total ? Math.round((n / total) * 100) : 0)
     return {
       total,
@@ -97,6 +99,8 @@ export default function YouthAnalytics() {
       contactPct: pct(contact),
       pwd,
       pwdPct: pct(pwd),
+      upcomingSk,
+      upcomingSkPct: pct(upcomingSk),
     }
   }, [rows])
 
@@ -182,6 +186,10 @@ export default function YouthAnalytics() {
             <article>
               <strong>{kpis.pwd}</strong>
               <span>PWD youth ({kpis.pwdPct}%)</span>
+            </article>
+            <article>
+              <strong>{kpis.upcomingSk}</strong>
+              <span>Upcoming SK age 14 ({kpis.upcomingSkPct}%)</span>
             </article>
           </section>
 

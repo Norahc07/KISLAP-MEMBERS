@@ -19,6 +19,7 @@ import YouthProfiles from './pages/YouthProfiles'
 import YouthForm from './pages/YouthForm'
 import YouthWilling from './pages/YouthWilling'
 import YouthPwd from './pages/YouthPwd'
+import YouthUpcomingSk from './pages/YouthUpcomingSk'
 import YouthAnalytics from './pages/YouthAnalytics'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
@@ -205,6 +206,14 @@ export default function App() {
           element={
             <RequirePage page="youth_profiling">
               <YouthPwd />
+            </RequirePage>
+          }
+        />
+        <Route
+          path="youth/upcoming-sk"
+          element={
+            <RequirePage page="youth_profiling">
+              <YouthUpcomingSk />
             </RequirePage>
           }
         />

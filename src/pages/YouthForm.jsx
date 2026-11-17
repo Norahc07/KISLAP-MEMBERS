@@ -40,6 +40,7 @@ import {
   fromRow,
   fullName,
   labelOf,
+  needsGuardianAssent,
   validateStep,
 } from '../lib/youthProfiling'
 import { fetchYouthByClientId, fetchYouthProfile, upsertYouthProfile } from '../lib/youthApi'
@@ -171,7 +172,7 @@ export default function YouthForm() {
   }, [id])
 
   useEffect(() => {
-    if (form.age_eligible === false) setBlocked('Only youth aged 15-30 may complete this survey.')
+    if (form.age_eligible === false) setBlocked('Only youth aged 14-30 may complete this survey.')
     else if (form.resides_mauban === false) setBlocked('Only residents of Mauban, Quezon may complete this survey.')
     else if (form.consent_agreed === false) setBlocked('Consent is required to participate in youth profiling.')
     else setBlocked('')
@@ -299,7 +300,7 @@ export default function YouthForm() {
                 Magandang araw, Kabataan ng Mauban! This survey helps KISLAP understand youth interests, skills, and
                 willingness to volunteer. Participation does not make you a KISLAP member.
               </p>
-              <ChoiceSet legend="1. Are you currently 15-30 years old?">
+              <ChoiceSet legend="1. Are you currently 14-30 years old?" hint="Age 14 is included to track youth becoming eligible for barangay SK voting at 15.">
                 <RadioGrid
                   options={[[true, 'Yes'], [false, 'No']]}
                   value={form.age_eligible}
@@ -328,9 +329,9 @@ export default function YouthForm() {
               <ChoiceSet legend="Age band">
                 <RadioGrid options={AGE_BANDS} value={form.age_band} onChange={(value) => setValue('age_band', value)} compact />
               </ChoiceSet>
-              {form.age_band === '15-17' && (
+              {needsGuardianAssent(form.age_band) && (
                 <div className="youth-guardian-block">
-                  <h2>Parent / guardian permission (ages 15-17)</h2>
+                  <h2>Parent / guardian permission (ages 14-17)</h2>
                   <label className="field">
                     <span>Guardian name</span>
                     <input className="input" value={form.guardian_name} onChange={setField('guardian_name')} />

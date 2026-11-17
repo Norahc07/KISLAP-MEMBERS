@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CloudOff, Download, HeartHandshake, MapPinned, Plus, RefreshCw, Search, Users } from 'lucide-react'
+import { CloudOff, Download, HeartHandshake, MapPinned, Plus, RefreshCw, Search, Users, Vote } from 'lucide-react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { errorMessage } from '../lib/constants'
 import { deleteYouthProfile, fetchYouthProfiles } from '../lib/youthApi'
 import {
+  AGE_BANDS,
   CONTRIBUTION_AREAS,
   MAUBAN_BARANGAYS,
+  UPCOMING_SK_AGE_BAND,
   VOLUNTEER_INTEREST,
   downloadCsv,
   fullName,
   isPwdYouth,
+  isUpcomingSkVoter,
   isWillingMember,
   labelOf,
   toCsv,
@@ -51,6 +54,8 @@ export default function YouthProfiles() {
   const [volunteer, setVolunteer] = useState('')
   const [contribution, setContribution] = useState('')
   const [pwdOnly, setPwdOnly] = useState(false)
+  const [upcomingSkOnly, setUpcomingSkOnly] = useState(false)
+  const [ageBand, setAgeBand] = useState('')
   const [removeTarget, setRemoveTarget] = useState(null)
 
   const canCreate = canDo('youth_profiling_create')
@@ -104,11 +109,13 @@ export default function YouthProfiles() {
       if (volunteer && row.volunteer_interest !== volunteer) return false
       if (contribution && !(row.contribution_areas || []).includes(contribution)) return false
       if (pwdOnly && !isPwdYouth(row)) return false
+      if (upcomingSkOnly && !isUpcomingSkVoter(row)) return false
+      if (ageBand && row.age_band !== ageBand) return false
       if (!q) return true
       const hay = `${fullName(row)} ${row.nickname || ''} ${row.barangay || ''}`.toLowerCase()
       return hay.includes(q)
     })
-  }, [rows, query, barangay, volunteer, contribution, pwdOnly])
+  }, [rows, query, barangay, volunteer, contribution, pwdOnly, upcomingSkOnly, ageBand])
 
   const grouped = useMemo(() => {
     const map = new Map()
@@ -188,6 +195,9 @@ export default function YouthProfiles() {
           <Link to="/youth/pwd" className="btn btn-soft">
             <HeartHandshake size={16} /> PWD youth
           </Link>
+          <Link to="/youth/upcoming-sk" className="btn btn-soft">
+            <Vote size={16} /> Upcoming SK (14)
+          </Link>
           {isAdmin && (
             <Link to="/youth/analytics" className="btn btn-soft">
               <MapPinned size={16} /> Analytics
@@ -220,6 +230,10 @@ export default function YouthProfiles() {
           <span>PWD youth</span>
         </article>
         <article>
+          <strong>{rows.filter(isUpcomingSkVoter).length}</strong>
+          <span>Upcoming SK (14)</span>
+        </article>
+        <article>
           <strong>{pendingCount}</strong>
           <span>Pending sync</span>
         </article>
@@ -243,6 +257,14 @@ export default function YouthProfiles() {
             </option>
           ))}
         </select>
+        <select className="input" value={ageBand} onChange={(event) => setAgeBand(event.target.value)}>
+          <option value="">All ages</option>
+          {AGE_BANDS.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
         <select className="input" value={volunteer} onChange={(event) => setVolunteer(event.target.value)}>
           <option value="">All volunteer interest</option>
           {VOLUNTEER_INTEREST.map(([value, label]) => (
@@ -262,6 +284,18 @@ export default function YouthProfiles() {
         <label className="check-row youth-willing-toggle">
           <input type="checkbox" checked={pwdOnly} onChange={(event) => setPwdOnly(event.target.checked)} />
           <span>PWD only</span>
+        </label>
+        <label className="check-row youth-willing-toggle">
+          <input
+            type="checkbox"
+            checked={upcomingSkOnly || ageBand === UPCOMING_SK_AGE_BAND}
+            onChange={(event) => {
+              setUpcomingSkOnly(event.target.checked)
+              if (event.target.checked) setAgeBand(UPCOMING_SK_AGE_BAND)
+              else if (ageBand === UPCOMING_SK_AGE_BAND) setAgeBand('')
+            }}
+          />
+          <span>Upcoming SK (14) only</span>
         </label>
         <button type="button" className="btn btn-soft" onClick={handleSync} disabled={!online || syncing}>
           <RefreshCw size={16} /> {syncing ? 'Syncing…' : 'Sync now'}
@@ -304,6 +338,7 @@ export default function YouthProfiles() {
                         {row.age_band || '—'} · {labelOf(VOLUNTEER_INTEREST, row.volunteer_interest)}
                         {isWillingMember(row) ? ' · Willing to join' : ''}
                         {isPwdYouth(row) ? ' · PWD' : ''}
+                        {isUpcomingSkVoter(row) ? ' · Upcoming SK' : ''}
                       </small>
                       <small className="youth-roles">
                         {(row.contribution_areas || []).join(' · ') || 'No contribution area yet'}

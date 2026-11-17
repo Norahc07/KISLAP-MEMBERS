@@ -51,12 +51,24 @@ export const VOTER_BARANGAY_OPTIONS = [
 ]
 
 export const AGE_BANDS = [
+  ['14', '14 (upcoming SK voter)'],
   ['15-17', '15–17'],
   ['18-20', '18–20'],
   ['21-24', '21–24'],
   ['25-27', '25–27'],
   ['28-30', '28–30'],
 ]
+
+/** Age 14 — turning 15, the starting point for barangay SK voter eligibility. */
+export const UPCOMING_SK_AGE_BAND = '14'
+
+export function isUpcomingSkVoter(row) {
+  return row?.age_band === UPCOMING_SK_AGE_BAND
+}
+
+export function needsGuardianAssent(ageBand) {
+  return ageBand === UPCOMING_SK_AGE_BAND || ageBand === '15-17'
+}
 
 export const SEX_OPTIONS = [
   ['male', 'Male'],
@@ -558,13 +570,13 @@ export function validateStep(stepId, form) {
 
   if (stepId === 'consent') {
     requireValue(form.age_eligible === true || form.age_eligible === false ? String(form.age_eligible) : '', 'Age eligibility', missing)
-    if (form.age_eligible === false) missing.push('Only respondents aged 15–30 may continue')
+    if (form.age_eligible === false) missing.push('Only respondents aged 14-30 may continue')
     requireValue(form.resides_mauban === true || form.resides_mauban === false ? String(form.resides_mauban) : '', 'Mauban residency', missing)
     if (form.resides_mauban === false) missing.push('Only Mauban residents may continue')
     requireValue(form.consent_agreed === true || form.consent_agreed === false ? String(form.consent_agreed) : '', 'Participation agreement', missing)
     if (form.consent_agreed === false) missing.push('Consent is required to continue')
     requireValue(form.age_band, 'Age band', missing)
-    if (form.age_band === '15-17') {
+    if (needsGuardianAssent(form.age_band)) {
       requireValue(form.guardian_name?.trim(), 'Guardian name', missing)
       if (form.guardian_permission !== true) missing.push('Guardian permission')
       if (form.youth_assent !== true) missing.push('Youth assent')
