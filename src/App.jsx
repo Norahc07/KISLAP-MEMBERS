@@ -21,7 +21,6 @@ import YouthWilling from './pages/YouthWilling'
 import YouthPwd from './pages/YouthPwd'
 import YouthUpcomingSk from './pages/YouthUpcomingSk'
 import YouthAnalytics from './pages/YouthAnalytics'
-import Office from './pages/Office'
 import { useAuth } from './context/AuthContext'
 import { supabaseConfigured } from './supabaseClient'
 
@@ -118,14 +117,6 @@ export default function App() {
         }
       >
         <Route index element={<OrgChart />} />
-        <Route
-          path="office"
-          element={
-            <RequirePage page="agents">
-              <Office />
-            </RequirePage>
-          }
-        />
         <Route path="documents" element={<Documents />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="account" element={<MemberAccount />} />

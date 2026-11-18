@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Download, Maximize2, Minimize2 } from 'lucide-react'
-import AgentRunButton from '../components/AgentRunButton'
 import {
   Bar,
   BarChart,
@@ -302,7 +301,6 @@ export default function YouthAnalytics() {
             <ArrowLeft size={16} /> <span className="youth-nav-label">Profiles</span>
             <span className="youth-nav-label-short">Back</span>
           </Link>
-          <AgentRunButton agentId="youth_insights" label="Ask Youth Insights" triggerSource="youth_analytics" />
           <button
             type="button"
             className="btn btn-primary"

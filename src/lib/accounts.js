@@ -79,14 +79,6 @@ export const STAFF_ACCESS = [
       { key: 'youth_profiling_delete', label: 'Delete' },
     ],
   },
-  {
-    key: 'agents',
-    label: 'AI Office',
-    path: '/office',
-    nav: true,
-    note: 'Agent status board and digests. Youth Insights remains admin-only.',
-    actions: [{ key: 'agents_run', label: 'Run agents / resolve proposals' }],
-  },
 ]
 
 export const STAFF_PAGES = STAFF_ACCESS.filter((page) => page.nav)

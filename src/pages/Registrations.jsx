@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, ClipboardList, Crop, Download, Minus, Pencil, Plus, Printer, RotateCcw, RotateCw, Search, Trash2, Upload } from 'lucide-react'
-import AgentRunButton from '../components/AgentRunButton'
 import Avatar from '../components/Avatar'
 import DateField from '../components/DateField'
 import RegistrationPrint from '../components/RegistrationPrint'
@@ -234,9 +233,6 @@ export default function Registrations() {
           <p className="eyebrow">Admin</p>
           <h1>eRegForms</h1>
           <p className="muted">Submitted membership forms, and who still needs to send one.</p>
-        </div>
-        <div className="toolbar">
-          <AgentRunButton agentId="membership_ops" label="Ask Membership Ops" triggerSource="registrations" />
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, CalendarDays, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard, MapPinned, ChartColumn, Bot } from 'lucide-react'
+import { LayoutDashboard, Users, Network, ClipboardCheck, ClipboardList, FileText, FolderOpen, CalendarDays, LogOut, Menu, X, Settings, ScrollText, UserRound, IdCard, MapPinned, ChartColumn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 import RegisteredVoterPrompt from './RegisteredVoterPrompt'
@@ -43,7 +43,6 @@ export default function Layout() {
       ]
     : [
         { to: '/', label: 'Org Chart', icon: LayoutDashboard, end: true },
-        ...(canAccessPage('agents') ? [{ to: '/office', label: 'AI Office', icon: Bot }] : []),
         documentsLink,
         calendarLink,
         ...(!isAdmin ? [{ to: '/account', label: 'My account', icon: UserRound }] : []),

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ClipboardCheck, Search } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { fetchTracker, updateTracker } from '../lib/api'
-import AgentRunButton from '../components/AgentRunButton'
 import Avatar from '../components/Avatar'
 import { errorMessage } from '../lib/constants'
 import { REQUIREMENT_COLUMNS, TRACKER_ROLES, listedOnTracker, memberCode, requirementsComplete } from '../lib/tracker'
@@ -97,9 +96,6 @@ export default function Tracker() {
           <p className="muted">
             {named.length} named members · {completeCount} complete · {listed.length - named.length} open slots
           </p>
-        </div>
-        <div className="toolbar">
-          <AgentRunButton agentId="membership_ops" label="Ask Membership Ops" triggerSource="tracker" />
         </div>
       </header>
 
