@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Bot, Check, Loader2, Play, RefreshCw, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -11,6 +11,8 @@ import {
   resolveAgentProposal,
   runAgent,
 } from '../lib/agentsApi'
+
+const OfficeScene = lazy(() => import('../components/OfficeScene'))
 
 function statusLabel(status) {
   switch (status) {
@@ -134,6 +136,10 @@ export default function Office() {
         <p className="muted">Loading office…</p>
       ) : (
         <>
+          <Suspense fallback={<div className="office-scene-shell office-scene-loading muted">Loading 3D office…</div>}>
+            <OfficeScene desks={desks} runningId={runningId} />
+          </Suspense>
+
           <section className="office-desk-grid" aria-label="Agent desks">
             {desks.map((desk) => {
               const status = desk.latest?.status || 'done'
