@@ -500,7 +500,8 @@ declare
     'assign', 'assign_write',
     'tracker', 'tracker_write',
     'users', 'audit',
-    'youth_profiling', 'youth_profiling_create', 'youth_profiling_update', 'youth_profiling_delete'
+    'youth_profiling', 'youth_profiling_create', 'youth_profiling_update', 'youth_profiling_delete',
+    'agents', 'agents_run'
   ];
   v_name text;
 begin

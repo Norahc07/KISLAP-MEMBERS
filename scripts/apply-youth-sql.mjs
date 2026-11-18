@@ -39,6 +39,7 @@ Or paste this file in the Supabase SQL Editor when you can open the account:
 
 const files = [
   'supabase/youth-profiling.sql',
+  'supabase/agents.sql',
 ]
   .map((rel) => resolve(root, rel))
   .filter((file) => existsSync(file))
